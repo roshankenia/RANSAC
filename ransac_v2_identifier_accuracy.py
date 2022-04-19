@@ -27,20 +27,16 @@ os.environ["CUDA_VISIBLE_DEVICES"] = "6"  # (xxxx is your specific GPU ID)
 
 # method to add noisy labels to data
 
-def corruptData(trainY, testY, noisePercentage):
+def corruptData(trainY, noisePercentage):
     # create copies of labels
     copyTrainY = trainY.copy()
-    copyTestY = testY.copy()
 
     # calculate number of samples to be made noisy
     numberNoisyTrain = int(noisePercentage * len(copyTrainY))
-    numberNoisyTest = int(noisePercentage * len(copyTestY))
 
     # generate indexes to swap
     trainYSwitchIndexes = random.sample(
         range(0, len(copyTrainY)), numberNoisyTrain)
-    testYSwitchIndexes = random.sample(
-        range(0, len(copyTestY)), numberNoisyTest)
 
     # generate new classes not equal to original for training and switch class
     for i in range(len(trainYSwitchIndexes)):
@@ -51,16 +47,7 @@ def corruptData(trainY, testY, noisePercentage):
         # switch label
         copyTrainY[trainYSwitchIndexes[i]] = label
 
-    # generate new classes not equal to original for testing and switch class
-    for i in range(len(testYSwitchIndexes)):
-        label = random.choice(range(10))
-        # find label that isn't the same
-        while label == testY[testYSwitchIndexes[i]]:
-            label = random.choice(range(10))
-        # switch label
-        copyTestY[testYSwitchIndexes[i]] = label
-
-    return (copyTrainY, copyTestY)
+    return copyTrainY
 
 
 def splitTrainingData(trainX, trainY, splitPercentage):
@@ -234,33 +221,14 @@ def makeConfidentTrainingSets(model, firstTrainX, firstTrainY, secondTrainX, sec
             newTrainY.append(secondTrainY[i])
             confidentIndexes.append(afterSplitIndexes[i])
 
+    # make plots
+    sortedFirstTrainXEntropies = sorted(firstTrainXEntropies)
+    sortedFirstTrainXIndices = list(range(len(firstTrainXEntropies)))
+
+    plt.plot(sortedFirstTrainXIndices, sortedFirstTrainXEntropies)
+    plt.show()
+
     return newTrainX, newTrainY, confidentIndexes
-
-# find out how much of corrupted test data the model can correctly predict
-
-
-def accuracyWithMislabeled(ransac_model, testX, testY, testYMislabeled):
-    predictions = ransac_model.predict(testX)
-    correctlyPredicted = 0
-    normalCount = 0
-    correctlyIdentified = 0
-    corruptedCount = 0
-    for i in range(len(testY)):
-        # obtain prediction
-        prediction = np.argmax(predictions[i])
-
-        # check if not corrupted and correctly predicted
-        if testYMislabeled[i] == testY[i]:
-            normalCount += 1
-            if prediction == testY[i]:
-                correctlyPredicted += 1
-        # check if corruped and correctly identified
-        elif testYMislabeled[i] != testY[i]:
-            corruptedCount += 1
-            if prediction == testY[i]:
-                correctlyIdentified += 1
-
-    return correctlyPredicted, normalCount, correctlyIdentified, corruptedCount
 
 
 (trainX, trainY), (testX, testY) = cifar10.load_data()
@@ -273,14 +241,15 @@ trainY, testY = trainY.flatten(), testY.flatten()
 
 # corrupt data
 noisePercentage = 0.25
-trainYMislabeled, testYMislabeled = corruptData(trainY, testY, noisePercentage)
+trainYMislabeled = corruptData(trainY, noisePercentage)
 
 # cleanModel = load_model('CleanModelTraining/ransac_clean.h5')
 # upperBoundAccuracy = cleanModel.evaluate(testX, testY)[1]
 
 # print(upperBoundAccuracy)
 
-print("Num GPUs Available: ", len(tf.config.experimental.list_physical_devices('GPU')))
+print("Num GPUs Available: ", len(
+    tf.config.experimental.list_physical_devices('GPU')))
 
 # collect best indexes over multiple models
 bestIndexes = list(range(len(trainX)))
@@ -292,8 +261,8 @@ for i in range(5):
 
     # train model used to identify confident samples
     confidenceModel = trainModel(firstTrainX, firstTrainY, 1)
-    percentageOfEntropy = [0.5, 1, 2, 3]
-    percentageOfPeak = [2, 1.5, 1, .5]
+    percentageOfEntropy = [0.25, .5, 1, 3]
+    percentageOfPeak = [5, 3, 1, .5]
     for j in range(len(percentageOfEntropy)):
         perEntropy = percentageOfEntropy[j]
         perPeak = percentageOfPeak[j]
@@ -324,19 +293,11 @@ for i in range(numberCertain):
 
 # run experiments
 # train a new model on these confident samples
+bestTrainX = np.array(bestTrainX)
+bestTrainY = np.array(bestTrainY)
 ransacModel = trainModel(bestTrainX, bestTrainY, 1)
 
-# calculate accuracy of this model in identifying corrupted samples
-correctlyPredicted, normalCount, correctlyIdentified, corruptedCount = accuracyWithMislabeled(
-    ransacModel, testX, testY, testYMislabeled)
+# calculate accuracy of this model in using test data
+accuracy = ransacModel.evaluate(testX, testY)[1]
 
-# add performance
-modelPerformance = (correctlyPredicted, normalCount,
-                    correctlyIdentified, corruptedCount)
-
-print("This model was able to correctly predict",
-      modelPerformance[0], "samples out of", modelPerformance[1])
-print("This model was able to correctly identify",
-      modelPerformance[2], "mislabeled samples out of", modelPerformance[3])
-print("Adding in the correctly identified mislabeled samples this model had an accuracy of",
-      ((modelPerformance[0]+modelPerformance[2])/len(testY)))
+print('This model has an accuracy of', accuracy, 'on the testing data.')
