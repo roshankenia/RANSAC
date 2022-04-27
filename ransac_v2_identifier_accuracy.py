@@ -8,18 +8,13 @@ Original file is located at
 """
 
 from scipy.stats import entropy
-from tensorflow.keras.callbacks import LearningRateScheduler
-from tensorflow.keras import regularizers
 from tensorflow.keras.datasets import cifar10
-from tensorflow.keras.models import Model, load_model
-from tensorflow.keras.layers import Conv2D, MaxPooling2D, Input, Conv2D, GlobalMaxPooling2D, MaxPooling2D
-from tensorflow.keras.layers import Dense, Activation, Flatten, Dropout, BatchNormalization
-from tensorflow.keras.preprocessing.image import ImageDataGenerator
 import numpy as np
 import random
 from tensorflow import keras
 import matplotlib.pyplot as plt
 import tensorflow as tf
+import tensorflow_hub as hub
 import os
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
 os.environ["CUDA_VISIBLE_DEVICES"] = "6"  # (xxxx is your specific GPU ID)
@@ -75,55 +70,8 @@ def splitTrainingData(trainX, trainY, splitPercentage):
 
 
 def trainModel(trainX, trainY, n):
-    # pre-train the model
-
-    # number of classes
-    K = 10
-
-    # calculate total number of classes
-    # for output layer
-    print("number of classes:", K)
-
-    # Build the model using the functional API
-    # input layer
-    i = Input(shape=trainX[0].shape)
-    x = Conv2D(32, (3, 3), activation='relu', padding='same')(i)
-    x = BatchNormalization()(x)
-    x = Conv2D(32, (3, 3), activation='relu', padding='same')(x)
-    x = BatchNormalization()(x)
-    x = MaxPooling2D((2, 2))(x)
-
-    if n == 2:
-        x = Conv2D(64, (3, 3), activation='relu', padding='same')(x)
-        x = BatchNormalization()(x)
-        x = Conv2D(64, (3, 3), activation='relu', padding='same')(x)
-        x = BatchNormalization()(x)
-        x = MaxPooling2D((2, 2))(x)
-
-    if n == 3:
-        x = Conv2D(64, (3, 3), activation='relu', padding='same')(x)
-        x = BatchNormalization()(x)
-        x = Conv2D(64, (3, 3), activation='relu', padding='same')(x)
-        x = BatchNormalization()(x)
-        x = MaxPooling2D((2, 2))(x)
-
-        x = Conv2D(128, (3, 3), activation='relu', padding='same')(x)
-        x = BatchNormalization()(x)
-        x = Conv2D(128, (3, 3), activation='relu', padding='same')(x)
-        x = BatchNormalization()(x)
-        x = MaxPooling2D((2, 2))(x)
-
-    x = Flatten()(x)
-    x = Dropout(0.2)(x)
-
-    # Hidden layer
-    x = Dense(1024, activation='relu')(x)
-    x = Dropout(0.2)(x)
-
-    # last hidden layer i.e.. output layer
-    x = Dense(K, activation='softmax')(x)
-
-    model = Model(i, x)
+    #load pretrained model
+    model = tf.keras.Sequential([hub.KerasLayer("https://tfhub.dev/deepmind/ganeval-cifar10-convnet/1")])
 
     # model description
     # model.summary()
@@ -133,7 +81,7 @@ def trainModel(trainX, trainY, n):
                   loss='sparse_categorical_crossentropy', metrics=['accuracy'])
 
     # Fit
-    r = model.fit(trainX, trainY, epochs=20)
+    model.fit(trainX, trainY, epochs=20)
 
     return model
 
@@ -221,12 +169,12 @@ def makeConfidentTrainingSets(model, firstTrainX, firstTrainY, secondTrainX, sec
             newTrainY.append(secondTrainY[i])
             confidentIndexes.append(afterSplitIndexes[i])
 
-    # make plots
-    sortedFirstTrainXEntropies = sorted(firstTrainXEntropies)
-    sortedFirstTrainXIndices = list(range(len(firstTrainXEntropies)))
+    # # make plots
+    # sortedFirstTrainXEntropies = sorted(firstTrainXEntropies)
+    # sortedFirstTrainXIndices = list(range(len(firstTrainXEntropies)))
 
-    plt.plot(sortedFirstTrainXIndices, sortedFirstTrainXEntropies)
-    plt.show()
+    # plt.plot(sortedFirstTrainXIndices, sortedFirstTrainXEntropies)
+    # plt.show()
 
     return newTrainX, newTrainY, confidentIndexes
 
@@ -261,8 +209,8 @@ for i in range(5):
 
     # train model used to identify confident samples
     confidenceModel = trainModel(firstTrainX, firstTrainY, 1)
-    percentageOfEntropy = [0.25, .5, 1, 3]
-    percentageOfPeak = [5, 3, 1, .5]
+    percentageOfEntropy = [1] #[0.25, .5, 1, 3]
+    percentageOfPeak = [1] #[5, 3, 1, .5]
     for j in range(len(percentageOfEntropy)):
         perEntropy = percentageOfEntropy[j]
         perPeak = percentageOfPeak[j]
@@ -284,7 +232,7 @@ bestSorted = np.argsort(bestIndexes)
 bestSorted = bestSorted[::-1]
 
 # calculate number of samples to use
-numberCertain = int(0.5 * len(bestIndexes))
+numberCertain = int(0.2 * len(bestIndexes))
 
 # take certain samples
 for i in range(numberCertain):
