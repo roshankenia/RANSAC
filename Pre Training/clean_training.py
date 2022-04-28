@@ -84,7 +84,7 @@ reduce_lr = LearningRateScheduler(lr_scheduler)
 #                               patience=10, min_lr=1e-6, verbose=1)
 
 solver = CIFAR10Solver(resnet20, data)
-history = solver.train(epochs=1, batch_size=128, data_augmentation=True, callbacks=[reduce_lr])
+history = solver.train(epochs=182, batch_size=128, data_augmentation=True, callbacks=[reduce_lr])
 
 solver.test()
 
