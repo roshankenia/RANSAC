@@ -11,8 +11,8 @@ Original file is located at
 import matplotlib.pyplot as plt
 import numpy as np
 from tensorflow import keras
-from keras.models import Sequential
-from keras.layers import Dense, Activation
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Dense, Activation
 from data_utils import *
 
 # %matplotlib inline
@@ -51,8 +51,8 @@ print('num train:%d num val:%d' % (num_train, num_val))
 data = (x_train, y_train, x_val, y_val, x_test, y_test)
 
 from ResNet import ResNet20ForCIFAR10
-from keras import losses
-from keras import optimizers
+from tensorflow.keras import losses
+from tensorflow.keras import optimizers
 
 weight_decay = 1e-4
 lr = 1e-1

@@ -1,15 +1,15 @@
 from tensorflow import keras 
-from keras import layers
-from keras.layers import Dense
-from keras.layers import Conv2D
-from keras.layers import AveragePooling2D
-from keras.layers import Flatten
-from keras.layers import MaxPool2D
-from keras.layers import Input
-from keras.layers import BatchNormalization
-from keras.layers import Activation
-from keras.models import Model
-from keras.regularizers import l2
+from tensorflow.keras import layers
+from tensorflow.keras.layers import Dense
+from tensorflow.keras.layers import Conv2D
+from tensorflow.keras.layers import AveragePooling2D
+from tensorflow.keras.layers import Flatten
+from tensorflow.keras.layers import MaxPool2D
+from tensorflow.keras.layers import Input
+from tensorflow.keras.layers import BatchNormalization
+from tensorflow.keras.layers import Activation
+from tensorflow.keras.models import Model
+from tensorflow.keras.regularizers import l2
 import os
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
 os.environ["CUDA_VISIBLE_DEVICES"] = "6"  # (xxxx is your specific GPU ID)
