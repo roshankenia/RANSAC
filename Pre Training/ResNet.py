@@ -9,6 +9,9 @@ from keras.layers import BatchNormalization
 from keras.layers import Activation
 from keras.models import Model
 from keras.regularizers import l2
+import os
+os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
+os.environ["CUDA_VISIBLE_DEVICES"] = "6"  # (xxxx is your specific GPU ID)
 
 
 def conv2d_bn(x, filters, kernel_size, weight_decay=.0, strides=(1, 1)):

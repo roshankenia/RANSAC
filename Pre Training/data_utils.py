@@ -4,6 +4,9 @@ from keras.utils import np_utils
 import matplotlib.pyplot as plt
 import numpy as np
 import cv2
+import os
+os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
+os.environ["CUDA_VISIBLE_DEVICES"] = "6"  # (xxxx is your specific GPU ID)
 
 class CIFAR10Data(object):
     def __init__(self):

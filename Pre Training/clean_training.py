@@ -23,6 +23,8 @@ plt.rcParams['image.cmap'] = 'gray'
 import tensorflow.compat.v1 as tf
 tf.disable_v2_behavior()
 import os
+os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
+os.environ["CUDA_VISIBLE_DEVICES"] = "6"  # (xxxx is your specific GPU ID)
 config = tf.ConfigProto()
 # config.gpu_options.per_process_gpu_memory_fraction = 0.1
 config.gpu_options.allow_growth = True
