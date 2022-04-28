@@ -64,7 +64,6 @@ resnet20.compile(optimizer=opt,
                  metrics=['accuracy'])
 resnet20.summary()
 
-%%time
 from cifar10_solver import *
 # from keras.callbacks import ReduceLROnPlateau
 from tensorflow.keras.callbacks import LearningRateScheduler
