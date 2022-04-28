@@ -10,7 +10,7 @@ Original file is located at
 # Commented out IPython magic to ensure Python compatibility.
 import matplotlib.pyplot as plt
 import numpy as np
-import keras
+from tensorflow import keras
 from keras.models import Sequential
 from keras.layers import Dense, Activation
 from data_utils import *
