@@ -25,11 +25,11 @@ class CIFAR10Data(object):
         num_classes = len(self.classes)
         # x_train = np.reshape(self.x_train, (self.x_train.shape[0], -1)).astype('float64')
         x_train = np.reshape(self.x_train, (self.x_train.shape[0], -1)).astype('float16')
-        y_train = tensorflow.keras.utils.to_categorical(self.y_train, num_classes)
+        y_train = keras.utils.to_categorical(self.y_train, num_classes)
 
         # x_test = np.reshape(self.x_test, (self.x_test.shape[0], -1)).astype('float64')
         x_test = np.reshape(self.x_test, (self.x_test.shape[0], -1)).astype('float16')
-        y_test = tensorflow.keras.utils.to_categorical(self.y_test, num_classes)
+        y_test = keras.utils.to_categorical(self.y_test, num_classes)
 
         if subtract_mean:
             mean_image = np.mean(x_train, axis=0).astype('uint8')
@@ -57,10 +57,10 @@ class CIFAR10Data(object):
         #     x_test = np.array([cv2.(img, output_shape) for img in self.x_test])
 
         x_train = x_train.astype('float16')
-        y_train = tensorflow.keras.utils.to_categorical(self.y_train, num_classes)
+        y_train = keras.utils.to_categorical(self.y_train, num_classes)
 
         x_test = x_test.astype('float16')
-        y_test = tensorflow.keras.utils.to_categorical(self.y_test, num_classes)
+        y_test = keras.utils.to_categorical(self.y_test, num_classes)
 
         if subtract_mean:
             mean_image = np.mean(x_train, axis=0)
