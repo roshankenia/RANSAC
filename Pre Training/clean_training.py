@@ -64,29 +64,28 @@ resnet20.compile(optimizer=opt,
                  metrics=['accuracy'])
 resnet20.summary()
 
-# Commented out IPython magic to ensure Python compatibility.
-# %%time
-# from cifar10_solver import *
-# # from keras.callbacks import ReduceLROnPlateau
-# from keras.callbacks import LearningRateScheduler
-# 
-# def lr_scheduler(epoch):
-#     new_lr = lr
-#     if epoch <= 91:
-#         pass
-#     elif epoch > 91 and epoch <= 137:
-#         new_lr = lr * 0.1
-#     else:
-#         new_lr = lr * 0.01
-#     print('new lr:%.2e' % new_lr)
-#     return new_lr 
-# 
-# reduce_lr = LearningRateScheduler(lr_scheduler)
-# # reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.1,
-# #                               patience=10, min_lr=1e-6, verbose=1)
-# 
-# solver = CIFAR10Solver(resnet20, data)
-# history = solver.train(epochs=182, batch_size=128, data_augmentation=True, callbacks=[reduce_lr])
+%%time
+from cifar10_solver import *
+# from keras.callbacks import ReduceLROnPlateau
+from tensorflow.keras.callbacks import LearningRateScheduler
+
+def lr_scheduler(epoch):
+    new_lr = lr
+    if epoch <= 91:
+        pass
+    elif epoch > 91 and epoch <= 137:
+        new_lr = lr * 0.1
+    else:
+        new_lr = lr * 0.01
+    print('new lr:%.2e' % new_lr)
+    return new_lr 
+
+reduce_lr = LearningRateScheduler(lr_scheduler)
+# reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.1,
+#                               patience=10, min_lr=1e-6, verbose=1)
+
+solver = CIFAR10Solver(resnet20, data)
+history = solver.train(epochs=182, batch_size=128, data_augmentation=True, callbacks=[reduce_lr])
 
 solver.test()
 
