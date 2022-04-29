@@ -31,8 +31,8 @@ cleanModel = tf.keras.models.load_model('../Pre Training/pretrain_model.h5')
 # model.summary()
 
 # Compile
-# cleanModel.compile(
-#     optimizer='adam', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
+cleanModel.compile(
+    optimizer='adam', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
 
 # # Fit
 # r = cleanModel.fit(trainX, trainY, epochs=20)
