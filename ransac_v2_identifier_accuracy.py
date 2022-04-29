@@ -232,7 +232,7 @@ bestSorted = np.argsort(bestIndexes)
 bestSorted = bestSorted[::-1]
 
 # calculate number of samples to use
-numberCertain = int(0.2 * len(bestIndexes))
+numberCertain = int(0.5 * len(bestIndexes))
 
 # take certain samples
 for i in range(numberCertain):
