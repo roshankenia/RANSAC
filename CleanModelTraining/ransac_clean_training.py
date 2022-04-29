@@ -25,7 +25,7 @@ trainX, testX = trainX / 255.0, testX / 255.0
 trainY, testY = trainY.flatten(), testY.flatten()
 
 #load pretrained model
-cleanModel = tf.keras.Sequential([hub.KerasLayer("https://tfhub.dev/deepmind/ganeval-cifar10-convnet/1", trainable=True)])
+cleanModel = tf.keras.models.load_model('/Pre Training/pretrain_model.h5')
 
 # model description
 # model.summary()
