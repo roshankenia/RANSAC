@@ -71,7 +71,7 @@ def splitTrainingData(trainX, trainY, splitPercentage):
 
 def trainModel(X, Y, n):
     #load pretrained model
-    model = tf.keras.models.load_model('/Pre Training/pretrain_model.h5')
+    model = tf.keras.models.load_model('Pre Training/pretrain_model.h5')
 
     # model description
     # model.summary()
