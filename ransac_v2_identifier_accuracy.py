@@ -71,7 +71,7 @@ def splitTrainingData(trainX, trainY, splitPercentage):
 
 def trainModel(trainX, trainY, n):
     #load pretrained model
-    model = tf.keras.Sequential([hub.KerasLayer("https://tfhub.dev/deepmind/ganeval-cifar10-convnet/1")])
+    model = tf.keras.models.load_model('/Pre Training/pretrain_model.h5')
 
     # model description
     # model.summary()
