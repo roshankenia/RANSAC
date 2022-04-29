@@ -70,7 +70,7 @@ def splitTrainingData(trainX, trainY, splitPercentage):
 
 
 def trainModel(X, Y, n):
-    #load pretrained model
+    # load pretrained model
     model = tf.keras.models.load_model('Pre Training/pretrain_model.h5')
 
     # model description
@@ -209,8 +209,8 @@ for i in range(5):
 
     # train model used to identify confident samples
     confidenceModel = trainModel(firstTrainX, firstTrainY, 1)
-    percentageOfEntropy = [1] #[0.25, .5, 1, 3]
-    percentageOfPeak = [1] #[5, 3, 1, .5]
+    percentageOfEntropy = [1]  # [0.25, .5, 1, 3]
+    percentageOfPeak = [1]  # [5, 3, 1, .5]
     for j in range(len(percentageOfEntropy)):
         perEntropy = percentageOfEntropy[j]
         perPeak = percentageOfPeak[j]
@@ -223,29 +223,34 @@ for i in range(5):
         for index in confidentIndexes:
             bestIndexes[index] += 1
 
-# make new datasets for the most confident samples
-bestTrainX = []
-bestTrainY = []
 
 # sort and preserve index
 bestSorted = np.argsort(bestIndexes)
 bestSorted = bestSorted[::-1]
 
-# calculate number of samples to use
-numberCertain = int(0.5 * len(bestIndexes))
+percs = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1]
 
-# take certain samples
-for i in range(numberCertain):
-    bestTrainX.append(trainX[bestSorted[i]])
-    bestTrainY.append(trainYMislabeled[bestSorted[i]])
+for perc in percs:
+    print('Using', perc, 'of confident samples')
+    # calculate number of samples to use
+    numberCertain = int(perc * len(bestIndexes))
 
-# run experiments
-# train a new model on these confident samples
-bestTrainX = np.array(bestTrainX)
-bestTrainY = np.array(bestTrainY)
-ransacModel = trainModel(bestTrainX, bestTrainY, 1)
+    # make new datasets for the most confident samples
+    bestTrainX = []
+    bestTrainY = []
 
-# calculate accuracy of this model in using test data
-accuracy = ransacModel.evaluate(testX, testY)[1]
+    # take certain samples
+    for i in range(numberCertain):
+        bestTrainX.append(trainX[bestSorted[i]])
+        bestTrainY.append(trainYMislabeled[bestSorted[i]])
 
-print('This model has an accuracy of', accuracy, 'on the testing data.')
+    # run experiments
+    # train a new model on these confident samples
+    bestTrainX = np.array(bestTrainX)
+    bestTrainY = np.array(bestTrainY)
+    ransacModel = trainModel(bestTrainX, bestTrainY, 1)
+
+    # calculate accuracy of this model in using test data
+    accuracy = ransacModel.evaluate(testX, testY)[1]
+
+    print('This model has an accuracy of', accuracy, 'on the testing data.')
