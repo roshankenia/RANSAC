@@ -69,7 +69,7 @@ def splitTrainingData(trainX, trainY, splitPercentage):
     return np.array(firstTrainX), np.array(firstTrainY), np.array(secondTrainX), np.array(secondTrainY), beforeSplitIndexes, afterSplitIndexes
 
 
-def trainModel(trainX, trainY, n):
+def trainModel(X, Y, n):
     #load pretrained model
     model = tf.keras.models.load_model('/Pre Training/pretrain_model.h5')
 
@@ -81,7 +81,7 @@ def trainModel(trainX, trainY, n):
                   loss='sparse_categorical_crossentropy', metrics=['accuracy'])
 
     # Fit
-    model.fit(trainX, trainY, epochs=20)
+    model.fit(X, Y, epochs=20)
 
     return model
 
