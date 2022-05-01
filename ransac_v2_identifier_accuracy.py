@@ -178,20 +178,24 @@ def makeConfidentTrainingSets(model, firstTrainX, firstTrainY, secondTrainX, sec
     sortedFirstTrainXEntropies = sorted(firstTrainXEntropies)
     plt.plot(firstPlotIndices, sortedFirstTrainXEntropies)
     plt.savefig('firstSetEntropy.png')
+    plt.close()
 
     sortedFirstTrainXPeaks = sorted(firstTrainXPeakValues)
     plt.plot(firstPlotIndices, sortedFirstTrainXPeaks)
     plt.savefig('firstSetPeak.png')
+    plt.close()
 
     secondPlotIndices = list(range(len(secondTrainXEntropies)))
 
     sortedSecondTrainXEntropies = sorted(secondTrainXEntropies)
     plt.plot(secondPlotIndices, sortedSecondTrainXEntropies)
     plt.savefig('secondSetEntropy.png')
+    plt.close()
 
     sortedSecondTrainXPeaks = sorted(secondTrainXPeakValues)
     plt.plot(secondPlotIndices, sortedSecondTrainXPeaks)
     plt.savefig('secondSetPeak.png')
+    plt.close()
 
     return newTrainX, newTrainY, confidentIndexes
 
