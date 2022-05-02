@@ -86,7 +86,7 @@ def trainModel(X, Y, n):
     return model
 
 
-def makeConfidentTrainingSets(model, firstTrainX, firstTrainY, secondTrainX, secondTrainY, perEntropy, perPeak, beforeSplitIndexes, afterSplitIndexes):
+def makeConfidentTrainingSets(model, firstTrainX, firstTrainY, secondTrainX, secondTrainY, entropyThreshold, peakThreshold, beforeSplitIndexes, afterSplitIndexes):
     newTrainX = []
     newTrainY = []
     confidentIndexes = []
@@ -109,14 +109,7 @@ def makeConfidentTrainingSets(model, firstTrainX, firstTrainY, secondTrainX, sec
 
     # set NANs to 0
     firstTrainXPeakValues = np.array(firstTrainXPeakValues)
-    firstTrainXPeakValues[np.isnan(firstTrainXPeakValues)] = 0
-    # calculate mean of entropy and peak value
-    meanEntropy = np.mean(firstTrainXEntropies)
-    meanPeakValue = np.mean(firstTrainXPeakValues)
-
-    # entropy and peak value hyperparameter
-    entropyVal = perEntropy*meanEntropy
-    peakVal = perPeak*meanPeakValue
+    firstTrainXPeakValues[np.isnan(firstTrainXPeakValues)] = 1
 
     # obtain samples that were correctly predicted and fall under the threshold for entropy and peak value
     for i in range(len(firstTrainXPredictions)):
@@ -124,7 +117,7 @@ def makeConfidentTrainingSets(model, firstTrainX, firstTrainY, secondTrainX, sec
         predictedClass = np.argmax(probDist)
 
         # if confident add to list
-        if predictedClass == firstTrainY[i] and firstTrainXEntropies[i] <= entropyVal and firstTrainXPeakValues[i] > peakVal:
+        if predictedClass == firstTrainY[i] and firstTrainXEntropies[i] <= entropyThreshold and firstTrainXPeakValues[i] > peakThreshold:
             newTrainX.append(firstTrainX[i])
             newTrainY.append(firstTrainY[i])
             confidentIndexes.append(beforeSplitIndexes[i])
@@ -148,15 +141,7 @@ def makeConfidentTrainingSets(model, firstTrainX, firstTrainY, secondTrainX, sec
 
     # set NANs to 0
     secondTrainXPeakValues = np.array(secondTrainXPeakValues)
-    secondTrainXPeakValues[np.isnan(secondTrainXPeakValues)] = 0
-
-    # calculate mean of entropy and peak value
-    meanEntropy = np.mean(secondTrainXEntropies)
-    meanPeakValue = np.mean(secondTrainXPeakValues)
-
-    # entropy and peak value hyperparameter
-    entropyVal = perEntropy*meanEntropy
-    peakVal = perPeak*meanPeakValue
+    secondTrainXPeakValues[np.isnan(secondTrainXPeakValues)] = 1
 
     # obtain samples that were correctly predicted and fall under the threshold for entropy and peak value
     for i in range(len(secondTrainXPredictions)):
@@ -164,7 +149,7 @@ def makeConfidentTrainingSets(model, firstTrainX, firstTrainY, secondTrainX, sec
         predictedClass = np.argmax(probDist)
 
         # if confident add to list
-        if predictedClass == secondTrainY[i] and secondTrainXEntropies[i] <= entropyVal and secondTrainXPeakValues[i] > peakVal:
+        if predictedClass == secondTrainY[i] and secondTrainXEntropies[i] <= entropyThreshold and secondTrainXPeakValues[i] > peakThreshold:
             newTrainX.append(secondTrainX[i])
             newTrainY.append(secondTrainY[i])
             confidentIndexes.append(afterSplitIndexes[i])
@@ -230,15 +215,15 @@ for i in range(5):
 
     # train model used to identify confident samples
     confidenceModel = trainModel(firstTrainX, firstTrainY, 1)
-    percentageOfEntropy = [0.5]  # [0.25, .5, 1, 3]
-    percentageOfPeak = [0.5]  # [5, 3, 1, .5]
-    for j in range(len(percentageOfEntropy)):
-        perEntropy = percentageOfEntropy[j]
-        perPeak = percentageOfPeak[j]
+    entropyThresholds = [0.5]  # [0.25, .5, 1, 3]
+    peakThresholds = [0.5]  # [5, 3, 1, .5]
+    for j in range(len(entropyThresholds)):
+        entropyThreshold = entropyThresholds[j]
+        peakThreshold = peakThresholds[j]
 
         # find samples that this model is confident on
         newTrainX, newTrainY, confidentIndexes = makeConfidentTrainingSets(
-            confidenceModel, firstTrainX, firstTrainY, secondTrainX, secondTrainY, perEntropy, perPeak, beforeSplitIndexes, afterSplitIndexes)
+            confidenceModel, firstTrainX, firstTrainY, secondTrainX, secondTrainY, entropyThreshold, peakThreshold, beforeSplitIndexes, afterSplitIndexes)
 
         # add 1 to every confident image
         for index in confidentIndexes:
