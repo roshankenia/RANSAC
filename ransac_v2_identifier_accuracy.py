@@ -224,7 +224,7 @@ for i in range(5):
     # train model used to identify confident samples
     confidenceModel = trainModel(firstTrainX, firstTrainY, 1)
     entropyThresholds = [0.5]  # [0.25, .5, 1, 3]
-    peakThresholds = [5]  # [5, 3, 1, .5]
+    peakThresholds = [2]  # [5, 3, 1, .5]
     for j in range(len(entropyThresholds)):
         entropyThreshold = entropyThresholds[j]
         peakThreshold = peakThresholds[j]
