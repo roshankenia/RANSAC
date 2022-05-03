@@ -102,14 +102,15 @@ def makeConfidentTrainingSets(model, firstTrainX, firstTrainY, secondTrainX, sec
         sampleEntropy = entropy(sample)
         # calculate peak value
         probSorted = sorted(sample)
+        probSorted = probSorted[::-1]
         peakValue = probSorted[0]/probSorted[1]
 
         firstTrainXEntropies.append(sampleEntropy)
         firstTrainXPeakValues.append(peakValue)
 
-    # set NANs to 0
+    # set NANs to 100
     firstTrainXPeakValues = np.array(firstTrainXPeakValues)
-    firstTrainXPeakValues[np.isnan(firstTrainXPeakValues)] = 1
+    firstTrainXPeakValues[np.isnan(firstTrainXPeakValues)] = 100
 
     # obtain samples that were correctly predicted and fall under the threshold for entropy and peak value
     for i in range(len(firstTrainXPredictions)):
@@ -134,6 +135,7 @@ def makeConfidentTrainingSets(model, firstTrainX, firstTrainY, secondTrainX, sec
         sampleEntropy = entropy(sample)
         # calculate peak value
         probSorted = sorted(sample)
+        probSorted = probSorted[::-1]
         peakValue = probSorted[0]/probSorted[1]
 
         secondTrainXEntropies.append(sampleEntropy)
@@ -141,7 +143,7 @@ def makeConfidentTrainingSets(model, firstTrainX, firstTrainY, secondTrainX, sec
 
     # set NANs to 0
     secondTrainXPeakValues = np.array(secondTrainXPeakValues)
-    secondTrainXPeakValues[np.isnan(secondTrainXPeakValues)] = 1
+    secondTrainXPeakValues[np.isnan(secondTrainXPeakValues)] = 100
 
     # obtain samples that were correctly predicted and fall under the threshold for entropy and peak value
     for i in range(len(secondTrainXPredictions)):
