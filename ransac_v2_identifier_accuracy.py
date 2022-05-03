@@ -105,12 +105,15 @@ def makeConfidentTrainingSets(model, firstTrainX, firstTrainY, secondTrainX, sec
         probSorted = probSorted[::-1]
         peakValue = probSorted[0]/probSorted[1]
 
+        if peakValue > 10:
+            peakValue = 10
+
         firstTrainXEntropies.append(sampleEntropy)
         firstTrainXPeakValues.append(peakValue)
 
     # set NANs to 100
     firstTrainXPeakValues = np.array(firstTrainXPeakValues)
-    firstTrainXPeakValues[np.isnan(firstTrainXPeakValues)] = 100
+    firstTrainXPeakValues[np.isnan(firstTrainXPeakValues)] = 10
 
     # obtain samples that were correctly predicted and fall under the threshold for entropy and peak value
     for i in range(len(firstTrainXPredictions)):
@@ -138,12 +141,15 @@ def makeConfidentTrainingSets(model, firstTrainX, firstTrainY, secondTrainX, sec
         probSorted = probSorted[::-1]
         peakValue = probSorted[0]/probSorted[1]
 
+        if peakValue > 10:
+            peakValue = 10
+
         secondTrainXEntropies.append(sampleEntropy)
         secondTrainXPeakValues.append(peakValue)
 
     # set NANs to 0
     secondTrainXPeakValues = np.array(secondTrainXPeakValues)
-    secondTrainXPeakValues[np.isnan(secondTrainXPeakValues)] = 100
+    secondTrainXPeakValues[np.isnan(secondTrainXPeakValues)] = 10
 
     # obtain samples that were correctly predicted and fall under the threshold for entropy and peak value
     for i in range(len(secondTrainXPredictions)):
@@ -261,7 +267,7 @@ for perc in percs:
 
     # calculate accuracy of this model in using test data
     accuracy = ransacModel.evaluate(testX, testY)[1]
-    
+
     accuracies.append(accuracy)
 
     print('This model has an accuracy of', accuracy, 'on the testing data.')
