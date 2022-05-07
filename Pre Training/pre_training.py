@@ -13,7 +13,7 @@ import numpy as np
 from tensorflow import keras
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense, Activation
-from data_utils import *
+from cifar100_utils import *
 
 # %matplotlib inline
 plt.rcParams['figure.figsize'] = (10.0, 8.0) # set default size of plots
@@ -34,8 +34,8 @@ tf.keras.backend.set_session(tf.Session(config=config))
 # %autoreload 2
 
 # get data
-cifar10_data = CIFAR10Data()
-x_train, y_train, x_test, y_test = cifar10_data.get_data(subtract_mean=True)
+cifar100_data = CIFAR100Data()
+x_train, y_train, x_test, y_test = cifar100_data.get_data(subtract_mean=True)
 
 num_train = int(x_train.shape[0] * 0.9)
 num_val = x_train.shape[0] - num_train
@@ -56,7 +56,7 @@ from tensorflow.keras import optimizers
 
 weight_decay = 1e-4
 lr = 1e-1
-num_classes = 10
+num_classes = 100
 resnet20 = ResNet20ForCIFAR10(input_shape=(32, 32, 3), classes=num_classes, weight_decay=weight_decay)
 opt = tf.keras.optimizers.SGD(lr=lr, momentum=0.9, nesterov=False)
 resnet20.compile(optimizer=opt,
@@ -88,4 +88,4 @@ history = solver.train(epochs=182, batch_size=128, data_augmentation=True, callb
 
 solver.test()
 
-solver.model.save('pretrain_model.h5')
+solver.model.save('cifar100_pretrain_model.h5')
