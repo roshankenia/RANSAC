@@ -7,7 +7,7 @@ Original file is located at
     https://colab.research.google.com/drive/1tFoS_uMOG6M3HA8fpIhSxCKc6QcIF9KK
 """
 
-from cifar10_ransac_utils import *
+from cifar10_clean_utils import *
 from tensorflow import keras
 import matplotlib.pyplot as plt
 import tensorflow as tf
