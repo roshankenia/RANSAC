@@ -7,6 +7,7 @@ Original file is located at
     https://colab.research.google.com/drive/1tFoS_uMOG6M3HA8fpIhSxCKc6QcIF9KK
 """
 
+from cifar10_ransac_utils import *
 from tensorflow import keras
 import matplotlib.pyplot as plt
 import tensorflow as tf
@@ -16,23 +17,23 @@ import os
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
 os.environ["CUDA_VISIBLE_DEVICES"] = "6"  # (xxxx is your specific GPU ID)
 
-(trainX, trainY), (testX, testY) = cifar10.load_data()
 
-# Normalize pixel values to be between 0 and 1
-trainX, testX = trainX / 255.0, testX / 255.0
+# get data
+cifar10_data = CIFAR10Data()
+trainX, trainY, testX, testY = cifar10_data.get_data(subtract_mean=True)
 
-# flatten the label values
-trainY, testY = trainY.flatten(), testY.flatten()
-
-#load pretrained model
-cleanModel = tf.keras.models.load_model('../Pre Training/pretrain_model.h5')
+# load pretrained model
+cleanModel = tf.keras.models.load_model('../Pre Training/cifar100_pretrain_model.h5')
 
 # model description
 # model.summary()
 
 # Compile
+lr = 1e-1
+opt = tf.keras.optimizers.SGD(lr=lr, momentum=0.9, nesterov=False)
+
 cleanModel.compile(
-    optimizer='adam', loss='sparse_categorical_crossentropy', metrics=['accuracy'])
+    optimizer=opt, loss='sparse_categorical_crossentropy', metrics=['accuracy'])
 
 # Fit
 r = cleanModel.fit(trainX, trainY, epochs=20)

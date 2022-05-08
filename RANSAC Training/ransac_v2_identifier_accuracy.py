@@ -7,6 +7,7 @@ Original file is located at
     https://colab.research.google.com/drive/1r_F2EOa0JUUIxhOpom2NkIscwXnrWzQl
 """
 
+from cifar10_ransac_utils import *
 from scipy.stats import entropy
 from tensorflow.keras.datasets import cifar10
 import numpy as np
@@ -193,13 +194,9 @@ def makeConfidentTrainingSets(model, firstTrainX, firstTrainY, secondTrainX, sec
     return newTrainX, newTrainY, confidentIndexes
 
 
-(trainX, trainY), (testX, testY) = cifar10.load_data()
-
-# Normalize pixel values to be between 0 and 1
-trainX, testX = trainX / 255.0, testX / 255.0
-
-# flatten the label values
-trainY, testY = trainY.flatten(), testY.flatten()
+# get data
+cifar10_data = CIFAR10Data()
+trainX, trainY, testX, testY = cifar10_data.get_data(subtract_mean=True)
 
 # corrupt data
 noisePercentage = 0.25
