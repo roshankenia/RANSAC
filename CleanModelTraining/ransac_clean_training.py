@@ -7,6 +7,7 @@ Original file is located at
     https://colab.research.google.com/drive/1tFoS_uMOG6M3HA8fpIhSxCKc6QcIF9KK
 """
 
+from tensorflow.keras import losses
 from cifar10_clean_utils import *
 from tensorflow import keras
 import matplotlib.pyplot as plt
@@ -17,13 +18,13 @@ import os
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
 os.environ["CUDA_VISIBLE_DEVICES"] = "6"  # (xxxx is your specific GPU ID)
 
-
 # get data
 cifar10_data = CIFAR10Data()
 trainX, trainY, testX, testY = cifar10_data.get_data(subtract_mean=True)
 
 # load pretrained model
-cleanModel = tf.keras.models.load_model('../Pre Training/cifar100_pretrain_model.h5')
+cleanModel = tf.keras.models.load_model(
+    '../Pre Training/cifar100_pretrain_model.h5')
 
 # model description
 # model.summary()
@@ -33,7 +34,7 @@ lr = 1e-1
 opt = tf.keras.optimizers.SGD(lr=lr, momentum=0.9, nesterov=False)
 
 cleanModel.compile(
-    optimizer=opt, loss='sparse_categorical_crossentropy', metrics=['accuracy'])
+    optimizer=opt, loss=losses.categorical_crossentropy, metrics=['accuracy'])
 
 # Fit
 r = cleanModel.fit(trainX, trainY, epochs=20)
