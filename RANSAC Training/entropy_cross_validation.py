@@ -75,10 +75,8 @@ trainX, trainY, testX, testY = cifar10_data.get_data(subtract_mean=True)
 
 
 # corrupt training data
-noisePercentage = 0.05
+noisePercentage = 0.25
 corruptedTrainY = corruptData(trainY, noisePercentage)
-print(trainY)
-print(corruptedTrainY)
 
 # split data into training and validation
 splitPercentage = 0.7
@@ -114,7 +112,7 @@ def lr_scheduler(epoch):
 reduce_lr = LearningRateScheduler(lr_scheduler)
 
 # fit model
-r = cleanModel.fit(trainX, corruptedTrainY, epochs=50,
+r = cleanModel.fit(corTrainX, corTrainY, epochs=50,
                    batch_size=128, callbacks=[reduce_lr])
 
 # obtain results
