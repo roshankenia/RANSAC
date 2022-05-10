@@ -73,7 +73,7 @@ trainX, trainY, testX, testY = cifar10_data.get_data(subtract_mean=True)
 
 
 # corrupt training data
-noisePercentage = 0.25
+noisePercentage = 0.05
 corruptedTrainY = corruptData(trainY, noisePercentage)
 
 # split data into training and validation
