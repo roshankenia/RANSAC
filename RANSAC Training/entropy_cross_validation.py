@@ -84,11 +84,11 @@ corTrainX, corTrainY, corValX, corValY, trainIndexes, valIndexes = splitTraining
 
 # compile a model
 weight_decay = 1e-4
-lr = 1e-4
+lr = 1e-1
 num_classes = 10
 cleanModel = ResNet20ForCIFAR10(input_shape=(
     32, 32, 3), classes=num_classes, weight_decay=weight_decay)
-opt = tf.keras.optimizers.SGD(lr=lr, momentum=0.9, nesterov=False)
+opt = tf.keras.optimizers.SGD(lr=lr, momentum=0.2, nesterov=False)
 cleanModel.compile(optimizer=opt,
                    loss=losses.categorical_crossentropy,
                    metrics=['accuracy'])
@@ -97,8 +97,8 @@ cleanModel.compile(optimizer=opt,
 
 def lr_scheduler(epoch):
     new_lr = lr
-    if epoch>2 and epoch <= 21:
-        new_lr = 0.1
+    if epoch <= 21:
+        pass
     elif epoch > 21 and epoch <= 37:
         new_lr = lr * 0.1
     else:
