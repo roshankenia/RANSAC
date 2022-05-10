@@ -84,7 +84,7 @@ corTrainX, corTrainY, corValX, corValY, trainIndexes, valIndexes = splitTraining
 
 # compile a model
 weight_decay = 1e-4
-lr = 1e-1
+lr = 1e-4
 num_classes = 10
 cleanModel = ResNet20ForCIFAR10(input_shape=(
     32, 32, 3), classes=num_classes, weight_decay=weight_decay)
@@ -110,7 +110,7 @@ def lr_scheduler(epoch):
 reduce_lr = LearningRateScheduler(lr_scheduler)
 
 # fit model
-r = cleanModel.fit(trainX, trainY, epochs=50,
+r = cleanModel.fit(trainX, corruptedTrainY, epochs=50,
                    batch_size=128, callbacks=[reduce_lr])
 
 # obtain results
