@@ -83,8 +83,8 @@ corTrainX, corTrainY, corValX, corValY, trainIndexes, valIndexes = splitTraining
 
 
 # compile a model
-weight_decay = 1e-4
-lr = 1e-3
+weight_decay = 1e-6
+lr = 1e-1
 num_classes = 10
 cleanModel = ResNet20ForCIFAR10(input_shape=(
     32, 32, 3), classes=num_classes, weight_decay=weight_decay)
