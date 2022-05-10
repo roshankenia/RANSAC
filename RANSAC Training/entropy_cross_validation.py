@@ -1,22 +1,23 @@
+import random
+from tensorflow.keras.callbacks import LearningRateScheduler
+from ResNet import ResNet20ForCIFAR10
+from tensorflow.keras import losses
+from cifar10_ransac_utils import *
+from tensorflow import keras
+import matplotlib.pyplot as plt
+import tensorflow as tf
+import tensorflow_hub as hub
+from tensorflow.keras.datasets import cifar10
+import os
 import sys
 sys.path.append('../')
-import os
-from tensorflow.keras.datasets import cifar10
-import tensorflow_hub as hub
-import tensorflow as tf
-import matplotlib.pyplot as plt
-from tensorflow import keras
-from cifar10_clean_utils import *
-from tensorflow.keras import losses
-from ResNet import ResNet20ForCIFAR10
-from tensorflow.keras.callbacks import LearningRateScheduler
-import random
 
 
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
 os.environ["CUDA_VISIBLE_DEVICES"] = "6"  # (xxxx is your specific GPU ID)
 
 # method to add noisy labels to data
+
 
 def corruptData(trainY, noisePercentage):
     # create copies of labels
@@ -39,6 +40,7 @@ def corruptData(trainY, noisePercentage):
         copyTrainY[trainYSwitchIndexes[i]] = label
 
     return copyTrainY
+
 
 def splitTrainingData(trainX, trainY, splitPercentage):
     # get number of elements to split
@@ -64,23 +66,22 @@ def splitTrainingData(trainX, trainY, splitPercentage):
     return np.array(firstTrainX), np.array(firstTrainY), np.array(secondTrainX), np.array(secondTrainY), beforeSplitIndexes, afterSplitIndexes
 
 
-
 # get data
 cifar10_data = CIFAR10Data()
 trainX, trainY, testX, testY = cifar10_data.get_data(subtract_mean=True)
 
 
-
-#corrupt training data
+# corrupt training data
 noisePercentage = 0.25
 corruptedTrainY = corruptData(trainY, noisePercentage)
 
-#split data into training and validation
+# split data into training and validation
 splitPercentage = 0.7
-corTrainX, corTrainY, corValX, corValY, trainIndexes, valIndexes = splitTrainingData(trainX, corruptedTrainY, splitPercentage)
+corTrainX, corTrainY, corValX, corValY, trainIndexes, valIndexes = splitTrainingData(
+    trainX, corruptedTrainY, splitPercentage)
 
 
-#compile a model
+# compile a model
 weight_decay = 1e-4
 lr = 1e-1
 num_classes = 10
