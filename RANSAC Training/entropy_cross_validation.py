@@ -35,10 +35,10 @@ def corruptData(trainY, noisePercentage):
     for i in range(len(trainYSwitchIndexes)):
         label = random.choice(range(10))
         # find label that isn't the same
-        while label == trainY[trainYSwitchIndexes[i]]:
+        while label == trainY[trainYSwitchIndexes[i]][0]:
             label = random.choice(range(10))
         # switch label
-        copyTrainY[trainYSwitchIndexes[i]] = label
+        copyTrainY[trainYSwitchIndexes[i]] = [label]
 
     return copyTrainY
 
