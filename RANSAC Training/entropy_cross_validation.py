@@ -110,7 +110,7 @@ def lr_scheduler(epoch):
 reduce_lr = LearningRateScheduler(lr_scheduler)
 
 # fit model
-r = cleanModel.fit(corTrainX, corTrainY, epochs=50,
+r = cleanModel.fit(trainX, corruptedTrainY, epochs=50,
                    batch_size=128, callbacks=[reduce_lr])
 
 # obtain results
