@@ -98,7 +98,7 @@ cleanModel.compile(optimizer=opt,
 def lr_scheduler(epoch):
     new_lr = lr
     if epoch <= 21:
-        pass
+        new_lr = 0.1
     elif epoch > 21 and epoch <= 37:
         new_lr = lr * 0.1
     else:
