@@ -1,3 +1,5 @@
+import sys
+sys.path.append('../')
 import random
 from tensorflow.keras.callbacks import LearningRateScheduler
 from ResNet import ResNet20ForCIFAR10
@@ -9,8 +11,7 @@ import tensorflow as tf
 import tensorflow_hub as hub
 from tensorflow.keras.datasets import cifar10
 import os
-import sys
-sys.path.append('../')
+
 
 
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
