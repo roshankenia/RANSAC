@@ -86,11 +86,11 @@ def makeConfidentTrainingSets(model, corTrainX, corTrainY, entropyThreshold):
         sampleEntropy = entropy(sample)
 
         # if confident add to list
-        if predictedClass == corTrainY[i] and sampleEntropy <= entropyThreshold:
+        if predictedClass == np.argmax(corTrainY[i]) and sampleEntropy <= entropyThreshold:
             newTrainX.append(corTrainX[i])
             newTrainY.append(corTrainY[i])
 
-    return newTrainX, newTrainY
+    return np.array(newTrainX), np.array(newTrainY)
 
 
 # get data
@@ -118,7 +118,6 @@ opt = tf.keras.optimizers.SGD(lr=lr, momentum=0.9, nesterov=False)
 corModel.compile(optimizer=opt,
                  loss=losses.categorical_crossentropy,
                  metrics=['accuracy'])
-# cleanModel.summary()
 
 
 def lr_scheduler(epoch):
@@ -155,7 +154,6 @@ opt = tf.keras.optimizers.SGD(lr=lr, momentum=0.9, nesterov=False)
 confModel.compile(optimizer=opt,
                   loss=losses.categorical_crossentropy,
                   metrics=['accuracy'])
-# cleanModel.summary()
 
 # fit model to conf samples
 r = confModel.fit(confTrainX, confTrainY, epochs=50,
