@@ -1,19 +1,17 @@
 import sys
 sys.path.append('../')
-from scipy.stats import entropy
-import os
-from tensorflow.keras.datasets import cifar10
-import tensorflow_hub as hub
-import tensorflow as tf
-import matplotlib.pyplot as plt
-from tensorflow import keras
-from cifar10_ransac_utils import *
-from tensorflow.keras import losses
-from ResNet import ResNet20ForCIFAR10
-from tensorflow.keras.callbacks import LearningRateScheduler
 import random
-
-
+from tensorflow.keras.callbacks import LearningRateScheduler
+from ResNet import ResNet20ForCIFAR10
+from tensorflow.keras import losses
+from cifar10_ransac_utils import *
+from tensorflow import keras
+import matplotlib.pyplot as plt
+import tensorflow as tf
+import tensorflow_hub as hub
+from tensorflow.keras.datasets import cifar10
+import os
+from scipy.stats import entropy
 
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
 os.environ["CUDA_VISIBLE_DEVICES"] = "6"  # (xxxx is your specific GPU ID)
@@ -70,23 +68,28 @@ def splitTrainingData(trainX, trainY, splitPercentage):
     return np.array(firstTrainX), np.array(firstTrainY), np.array(secondTrainX), np.array(secondTrainY), beforeSplitIndexes, afterSplitIndexes
 
 
-def makeConfidentTrainingSets(model, corTrainX, corTrainY, entropyThreshold):
+def makeConfidentTrainingSets(model, corTrainX, corTrainY, peakThreshold):
     newTrainX = []
     newTrainY = []
     # find confident samples from first training set
-    # obtain probability distribution of classes for each sample after the split and calculate its entropy
+    # obtain probability distribution of classes for each sample after the split and calculate its peak value
     # make predictions
     predictions = model.predict(corTrainX)
-    # find entropy for every sample and decide if confident
+    # find peak value for every sample and decide if confident
     for i in range(len(predictions)):
         sample = predictions[i]
         # get classification
         predictedClass = np.argmax(sample)
-        # calculate entropy
-        sampleEntropy = entropy(sample)
+        # calculate peak value
+        probSorted = sorted(sample)
+        probSorted = probSorted[::-1]
+        peakValue = probSorted[0]/probSorted[1]
+
+        if np.isnan(peakValue) or peakValue > 10:
+            peakValue = 10
 
         # if confident add to list
-        if predictedClass == np.argmax(corTrainY[i]) and sampleEntropy <= entropyThreshold:
+        if predictedClass == np.argmax(corTrainY[i]) and peakValue >= peakThreshold:
             newTrainX.append(corTrainX[i])
             newTrainY.append(corTrainY[i])
 
@@ -140,10 +143,10 @@ r = corModel.fit(corTrainX, corTrainY, epochs=50,
 
 
 # obtain confident samples
-entropyThresholds = [0.1, 0.25, 0.5, .75, 1, 1.5]
-for entropyThreshold in entropyThresholds:
+peakThresholds = [1, 2, 3, 5, 7, 10]
+for peakThreshold in peakThresholds:
     confTrainX, confTrainY = makeConfidentTrainingSets(
-        corModel, corTrainX, corTrainY, entropyThreshold)
+        corModel, corTrainX, corTrainY, peakThreshold)
 
     # compile a new model
     weight_decay = 1e-4
@@ -153,16 +156,15 @@ for entropyThreshold in entropyThresholds:
         32, 32, 3), classes=num_classes, weight_decay=weight_decay)
     opt = tf.keras.optimizers.SGD(lr=lr, momentum=0.9, nesterov=False)
     confModel.compile(optimizer=opt,
-                    loss=losses.categorical_crossentropy,
-                    metrics=['accuracy'])
+                      loss=losses.categorical_crossentropy,
+                      metrics=['accuracy'])
 
     # fit model to conf samples
     r = confModel.fit(confTrainX, confTrainY, epochs=50,
-                    batch_size=128, callbacks=[reduce_lr])
+                      batch_size=128, callbacks=[reduce_lr])
 
     # obtain results
     valAccuracy = confModel.evaluate(corValX, corValY)[1]
 
     print('The trained model has an accuracy of',
-        valAccuracy, 'on the validation data with', entropyThreshold,'as the threshold.')
-
+          valAccuracy, 'on the validation data with', peakThreshold, 'as the threshold.')
