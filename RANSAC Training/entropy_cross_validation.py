@@ -1,16 +1,17 @@
 import sys
 sys.path.append('../')
-import random
-from tensorflow.keras.callbacks import LearningRateScheduler
-from ResNet import ResNet20ForCIFAR10
-from tensorflow.keras import losses
-from cifar10_ransac_utils import *
-from tensorflow import keras
-import matplotlib.pyplot as plt
-import tensorflow as tf
-import tensorflow_hub as hub
-from tensorflow.keras.datasets import cifar10
+from scipy.stats import entropy
 import os
+from tensorflow.keras.datasets import cifar10
+import tensorflow_hub as hub
+import tensorflow as tf
+import matplotlib.pyplot as plt
+from tensorflow import keras
+from cifar10_ransac_utils import *
+from tensorflow.keras import losses
+from ResNet import ResNet20ForCIFAR10
+from tensorflow.keras.callbacks import LearningRateScheduler
+import random
 
 
 
@@ -69,6 +70,29 @@ def splitTrainingData(trainX, trainY, splitPercentage):
     return np.array(firstTrainX), np.array(firstTrainY), np.array(secondTrainX), np.array(secondTrainY), beforeSplitIndexes, afterSplitIndexes
 
 
+def makeConfidentTrainingSets(model, corTrainX, corTrainY, entropyThreshold):
+    newTrainX = []
+    newTrainY = []
+    # find confident samples from first training set
+    # obtain probability distribution of classes for each sample after the split and calculate its entropy
+    # make predictions
+    predictions = model.predict(corTrainX)
+    # find entropy for every sample and decide if confident
+    for i in range(len(predictions)):
+        sample = predictions[i]
+        # get classification
+        predictedClass = np.argmax(sample)
+        # calculate entropy
+        sampleEntropy = entropy(sample)
+
+        # if confident add to list
+        if predictedClass == corTrainY[i] and sampleEntropy <= entropyThreshold:
+            newTrainX.append(corTrainX[i])
+            newTrainY.append(corTrainY[i])
+
+    return newTrainX, newTrainY
+
+
 # get data
 cifar10_data = CIFAR10Data()
 trainX, trainY, testX, testY = cifar10_data.get_data(subtract_mean=True)
@@ -88,12 +112,12 @@ corTrainX, corTrainY, corValX, corValY, trainIndexes, valIndexes = splitTraining
 weight_decay = 1e-4
 lr = 1e-1
 num_classes = 10
-cleanModel = ResNet20ForCIFAR10(input_shape=(
+corModel = ResNet20ForCIFAR10(input_shape=(
     32, 32, 3), classes=num_classes, weight_decay=weight_decay)
 opt = tf.keras.optimizers.SGD(lr=lr, momentum=0.9, nesterov=False)
-cleanModel.compile(optimizer=opt,
-                   loss=losses.categorical_crossentropy,
-                   metrics=['accuracy'])
+corModel.compile(optimizer=opt,
+                 loss=losses.categorical_crossentropy,
+                 metrics=['accuracy'])
 # cleanModel.summary()
 
 
@@ -112,14 +136,36 @@ def lr_scheduler(epoch):
 reduce_lr = LearningRateScheduler(lr_scheduler)
 
 # fit model
-r = cleanModel.fit(corTrainX, corTrainY, epochs=50,
-                   batch_size=128, callbacks=[reduce_lr])
+r = corModel.fit(corTrainX, corTrainY, epochs=50,
+                 batch_size=128, callbacks=[reduce_lr])
+
+
+# obtain confident samples
+entropyThreshold = 0.5
+confTrainX, confTrainY = makeConfidentTrainingSets(
+    corModel, corTrainX, corTrainY, entropyThreshold)
+
+# compile a new model
+weight_decay = 1e-4
+lr = 1e-1
+num_classes = 10
+confModel = ResNet20ForCIFAR10(input_shape=(
+    32, 32, 3), classes=num_classes, weight_decay=weight_decay)
+opt = tf.keras.optimizers.SGD(lr=lr, momentum=0.9, nesterov=False)
+confModel.compile(optimizer=opt,
+                  loss=losses.categorical_crossentropy,
+                  metrics=['accuracy'])
+# cleanModel.summary()
+
+# fit model to conf samples
+r = confModel.fit(confTrainX, confTrainY, epochs=50,
+                  batch_size=128, callbacks=[reduce_lr])
 
 # obtain results
-upperBoundAccuracy = cleanModel.evaluate(corValX, corValY)[1]
+valAccuracy = confModel.evaluate(corValX, corValY)[1]
 
 print('The trained model has an accuracy of',
-      upperBoundAccuracy, 'on the testing data.')
+      valAccuracy, 'on the testing data.')
 
 # #save model
 # cleanModel.save('ransac_clean.h5')
