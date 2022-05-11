@@ -140,30 +140,29 @@ r = corModel.fit(corTrainX, corTrainY, epochs=50,
 
 
 # obtain confident samples
-entropyThreshold = 0.5
-confTrainX, confTrainY = makeConfidentTrainingSets(
-    corModel, corTrainX, corTrainY, entropyThreshold)
+entropyThresholds = [0.1, 0.25, 0.5, .75, 1, 1.5]
+for entropyThreshold in entropyThresholds:
+    confTrainX, confTrainY = makeConfidentTrainingSets(
+        corModel, corTrainX, corTrainY, entropyThreshold)
 
-# compile a new model
-weight_decay = 1e-4
-lr = 1e-1
-num_classes = 10
-confModel = ResNet20ForCIFAR10(input_shape=(
-    32, 32, 3), classes=num_classes, weight_decay=weight_decay)
-opt = tf.keras.optimizers.SGD(lr=lr, momentum=0.9, nesterov=False)
-confModel.compile(optimizer=opt,
-                  loss=losses.categorical_crossentropy,
-                  metrics=['accuracy'])
+    # compile a new model
+    weight_decay = 1e-4
+    lr = 1e-1
+    num_classes = 10
+    confModel = ResNet20ForCIFAR10(input_shape=(
+        32, 32, 3), classes=num_classes, weight_decay=weight_decay)
+    opt = tf.keras.optimizers.SGD(lr=lr, momentum=0.9, nesterov=False)
+    confModel.compile(optimizer=opt,
+                    loss=losses.categorical_crossentropy,
+                    metrics=['accuracy'])
 
-# fit model to conf samples
-r = confModel.fit(confTrainX, confTrainY, epochs=50,
-                  batch_size=128, callbacks=[reduce_lr])
+    # fit model to conf samples
+    r = confModel.fit(confTrainX, confTrainY, epochs=50,
+                    batch_size=128, callbacks=[reduce_lr])
 
-# obtain results
-valAccuracy = confModel.evaluate(corValX, corValY)[1]
+    # obtain results
+    valAccuracy = confModel.evaluate(corValX, corValY)[1]
 
-print('The trained model has an accuracy of',
-      valAccuracy, 'on the testing data.')
+    print('The trained model has an accuracy of',
+        valAccuracy, 'on the validation data with', entropyThresholds,'as the threshold.')
 
-# #save model
-# cleanModel.save('ransac_clean.h5')
