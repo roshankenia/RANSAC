@@ -21,6 +21,7 @@ from tensorflow.keras import losses
 from tensorflow.keras.callbacks import LearningRateScheduler
 
 
+
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
 os.environ["CUDA_VISIBLE_DEVICES"] = "6"  # (xxxx is your specific GPU ID)
 
@@ -115,7 +116,7 @@ def makeConfidentTrainingSets(model, corTrainX, corTrainY, entropyThreshold, pea
             newTrainX.append(corTrainX[i])
             newTrainY.append(corTrainY[i])
             confidentIndexes.append(i)
-        
+
         entropies.append(sampleEntropy)
         peaks.append(peakValue)
 
@@ -173,6 +174,10 @@ bestSorted = bestSorted[::-1]
 
 percs = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1]
 accuracies = []
+correctLabelInCertains = []
+mislabelInCertains = []
+correctLabelInUncertains = []
+mislabelInUncertains = []
 
 for perc in percs:
     print('Using', perc, 'of confident samples')
@@ -183,10 +188,31 @@ for perc in percs:
     bestTrainX = []
     bestTrainY = []
 
-    # take certain samples
+    correctLabelInCertain = 0
+    mislabelInCertain = 0
+    correctLabelInUncertain = 0
+    mislabelInUncertain = 0
+
+    # take certain samples and count those that were correctly and incorrectly identified
     for i in range(numberCertain):
         bestTrainX.append(trainX[bestSorted[i]])
         bestTrainY.append(trainYMislabeled[bestSorted[i]])
+
+        if trainYMislabeled[bestSorted[i]] == trainY[bestSorted[i]]:
+            correctLabelInCertain += 1
+        else:
+            mislabelInCertain += 1
+
+    for j in range(numberCertain, len(bestSorted)):
+        if trainYMislabeled[bestSorted[j]] == trainY[bestSorted[j]]:
+            correctLabelInUncertain += 1
+        else:
+            mislabelInUncertain += 1
+
+    correctLabelInCertains.append(correctLabelInCertain)
+    mislabelInCertains.append(mislabelInCertain)
+    correctLabelInUncertains.append(correctLabelInUncertain)
+    mislabelInUncertains.append(mislabelInUncertain)
 
     # run experiments
     # train a new model on these confident samples
@@ -199,9 +225,38 @@ for perc in percs:
 
     accuracies.append(accuracy)
 
-    print('This model has an accuracy of', accuracy, 'on the testing data.')
+    print('This model has an accuracy of', accuracy, 'on the testing data.\n')
+    print('This model had', correctLabelInCertain,
+          'correctly labeled samples in the certain training data out of', len(bestTrainY), '\n')
+    print('This model had', mislabelInCertain,
+          'mislabeled labeled samples in the certain training data out of', len(bestTrainY), '\n')
+    print('This model had', correctLabelInUncertain,
+          'correctly labeled samples in the certain training data out of', (len(bestIndexes) - len(bestTrainY)), '\n')
+    print('This model had', mislabelInUncertain,
+          'mislabeled labeled samples in the certain training data out of', (len(bestIndexes) - len(bestTrainY)), '\n')
+
 
 print("accuracies:", accuracies)
 plt.plot(percs, accuracies)
 plt.savefig('accuracyChar.png')
+plt.close()
+
+print("correctLabelInCertains:", correctLabelInCertains)
+plt.plot(percs, correctLabelInCertains)
+plt.savefig('correctLabelInCertains.png')
+plt.close()
+
+print("mislabelInCertains:", mislabelInCertains)
+plt.plot(percs, mislabelInCertains)
+plt.savefig('mislabelInCertains.png')
+plt.close()
+
+print("correctLabelInUncertains:", correctLabelInUncertains)
+plt.plot(percs, correctLabelInUncertains)
+plt.savefig('correctLabelInUncertains.png')
+plt.close()
+
+print("mislabelInUncertains:", mislabelInUncertains)
+plt.plot(percs, mislabelInUncertains)
+plt.savefig('mislabelInUncertains.png')
 plt.close()
