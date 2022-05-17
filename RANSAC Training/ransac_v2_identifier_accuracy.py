@@ -198,13 +198,13 @@ for perc in percs:
         bestTrainX.append(trainX[bestSorted[i]])
         bestTrainY.append(trainYMislabeled[bestSorted[i]])
 
-        if trainYMislabeled[bestSorted[i]] == trainY[bestSorted[i]]:
+        if np.argmax(trainYMislabeled[bestSorted[i]]) == np.argmax(trainY[bestSorted[i]]):
             correctLabelInCertain += 1
         else:
             mislabelInCertain += 1
 
     for j in range(numberCertain, len(bestSorted)):
-        if trainYMislabeled[bestSorted[j]] == trainY[bestSorted[j]]:
+        if np.argmax(trainYMislabeled[bestSorted[j]]) == np.argmax(trainY[bestSorted[j]]):
             correctLabelInUncertain += 1
         else:
             mislabelInUncertain += 1
