@@ -98,6 +98,8 @@ def makeConfidentTrainingSets(model, corTrainX, corTrainY, entropyThreshold, pea
     # find entropy for every sample and decide if confident
     for i in range(len(predictions)):
         sample = predictions[i]
+        if i < 20:
+            print(i,'sample:', sample)
         # get classification
         predictedClass = np.argmax(sample)
         # calculate entropy
@@ -142,7 +144,7 @@ cifar10_data = CIFAR10Data()
 trainX, trainY, testX, testY = cifar10_data.get_data(subtract_mean=True)
 
 # corrupt data
-noisePercentage = 0.25
+noisePercentage = 0.1
 trainYMislabeled = corruptData(trainY, noisePercentage)
 
 # print(upperBoundAccuracy)
@@ -171,6 +173,10 @@ for i in range(5):
 # sort and preserve index
 bestSorted = np.argsort(bestIndexes)
 bestSorted = bestSorted[::-1]
+
+print('best 50 samples:')
+for g in range(50):
+    print(bestSorted[g],':',bestIndexes[bestSorted[g]])
 
 percs = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1]
 accuracies = []
