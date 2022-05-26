@@ -8,17 +8,18 @@ Original file is located at
 """
 import sys
 sys.path.append('../')
-from cifar10_ransac_utils import *
-from scipy.stats import entropy
-import numpy as np
-import random
-from tensorflow import keras
-import matplotlib.pyplot as plt
-import tensorflow as tf
-import os
-from ResNet import ResNet20ForCIFAR10
-from tensorflow.keras import losses
+import itertools
 from tensorflow.keras.callbacks import LearningRateScheduler
+from tensorflow.keras import losses
+from ResNet import ResNet20ForCIFAR10
+import os
+import tensorflow as tf
+import matplotlib.pyplot as plt
+from tensorflow import keras
+import random
+import numpy as np
+from scipy.stats import entropy
+from cifar10_ransac_utils import *
 
 
 
@@ -98,8 +99,6 @@ def makeConfidentTrainingSets(model, corTrainX, corTrainY, entropyThreshold, pea
     # find entropy for every sample and decide if confident
     for i in range(len(predictions)):
         sample = predictions[i]
-        if i < 20:
-            print(i,'sample:', sample)
         # get classification
         predictedClass = np.argmax(sample)
         # calculate entropy
@@ -153,8 +152,8 @@ print("Num GPUs Available: ", len(
     tf.config.experimental.list_physical_devices('GPU')))
 
 # collect best indexes over multiple models
-bestIndexes = list(range(len(trainX)))
-for i in range(5):
+bestIndexes = list(itertools.repeat(0, len(trainX)))
+for p in range(5):
     # train model used to identify confident samples
     confidenceModel = trainModel(trainX, trainYMislabeled)
     # from cross validation
@@ -176,7 +175,7 @@ bestSorted = bestSorted[::-1]
 
 print('best 50 samples:')
 for g in range(50):
-    print(bestSorted[g],':',bestIndexes[bestSorted[g]])
+    print(bestSorted[g], ':', bestIndexes[bestSorted[g]])
 
 percs = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1]
 accuracies = []
