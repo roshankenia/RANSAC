@@ -1,17 +1,17 @@
 import sys
 sys.path.append('../')
-import random
-from tensorflow.keras.callbacks import LearningRateScheduler
-from ResNet import ResNet20ForCIFAR10
-from tensorflow.keras import losses
-from cifar10_ransac_utils import *
-from tensorflow import keras
-import matplotlib.pyplot as plt
-import tensorflow as tf
-import tensorflow_hub as hub
-from tensorflow.keras.datasets import cifar10
-import os
 from scipy.stats import entropy
+import os
+from tensorflow.keras.datasets import cifar10
+import tensorflow_hub as hub
+import tensorflow as tf
+import matplotlib.pyplot as plt
+from tensorflow import keras
+from cifar10_ransac_utils import *
+from tensorflow.keras import losses
+from ResNet import ResNet20ForCIFAR10
+from tensorflow.keras.callbacks import LearningRateScheduler
+import random
 
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
 os.environ["CUDA_VISIBLE_DEVICES"] = "6"  # (xxxx is your specific GPU ID)
@@ -100,16 +100,14 @@ def makeConfidentTrainingSets(model, corTrainX, corTrainY, peakThreshold):
 cifar10_data = CIFAR10Data()
 trainX, trainY, testX, testY = cifar10_data.get_data(subtract_mean=True)
 
+# split data into training and validation
+splitPercentage = 0.7
+trainX, trainY, valX, valY, trainIndexes, valIndexes = splitTrainingData(
+    trainX, trainY, splitPercentage)
 
 # corrupt training data
 noisePercentage = 0.25
 corruptedTrainY = corruptData(trainY, noisePercentage)
-
-# split data into training and validation
-splitPercentage = 0.7
-corTrainX, corTrainY, corValX, corValY, trainIndexes, valIndexes = splitTrainingData(
-    trainX, corruptedTrainY, splitPercentage)
-
 
 # compile a model
 weight_decay = 1e-4
@@ -138,7 +136,7 @@ def lr_scheduler(epoch):
 reduce_lr = LearningRateScheduler(lr_scheduler)
 
 # fit model
-r = corModel.fit(corTrainX, corTrainY, epochs=50,
+r = corModel.fit(trainX, corruptedTrainY, epochs=50,
                  batch_size=128, callbacks=[reduce_lr])
 
 
@@ -146,7 +144,7 @@ r = corModel.fit(corTrainX, corTrainY, epochs=50,
 peakThresholds = [1, 2, 3, 5, 7, 10]
 for peakThreshold in peakThresholds:
     confTrainX, confTrainY = makeConfidentTrainingSets(
-        corModel, corTrainX, corTrainY, peakThreshold)
+        corModel, trainX, corruptedTrainY, peakThreshold)
 
     # compile a new model
     weight_decay = 1e-4
@@ -164,7 +162,7 @@ for peakThreshold in peakThresholds:
                       batch_size=128, callbacks=[reduce_lr])
 
     # obtain results
-    valAccuracy = confModel.evaluate(corValX, corValY)[1]
+    valAccuracy = confModel.evaluate(valX, valY)[1]
 
     print('The trained model has an accuracy of',
           valAccuracy, 'on the validation data with', peakThreshold, 'as the threshold.')
