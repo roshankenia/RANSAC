@@ -1,17 +1,17 @@
 import sys
 sys.path.append('../')
-from scipy.stats import entropy
-import os
-from tensorflow.keras.datasets import cifar10
-import tensorflow_hub as hub
-import tensorflow as tf
-import matplotlib.pyplot as plt
-from tensorflow import keras
-from cifar10_ransac_utils import *
-from tensorflow.keras import losses
-from ResNet import ResNet20ForCIFAR10
-from tensorflow.keras.callbacks import LearningRateScheduler
 import random
+from tensorflow.keras.callbacks import LearningRateScheduler
+from ResNet import ResNet20ForCIFAR10
+from tensorflow.keras import losses
+from cifar10_ransac_utils import *
+from tensorflow import keras
+import matplotlib.pyplot as plt
+import tensorflow as tf
+import tensorflow_hub as hub
+from tensorflow.keras.datasets import cifar10
+import os
+from scipy.stats import entropy
 
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
 os.environ["CUDA_VISIBLE_DEVICES"] = "6"  # (xxxx is your specific GPU ID)
@@ -68,9 +68,12 @@ def splitTrainingData(trainX, trainY, splitPercentage):
     return np.array(firstTrainX), np.array(firstTrainY), np.array(secondTrainX), np.array(secondTrainY), beforeSplitIndexes, afterSplitIndexes
 
 
-def makeConfidentTrainingSets(model, corTrainX, corTrainY, peakThreshold):
+def makeConfidentTrainingSets(model, corTrainX, corTrainY, peakThreshold, trainY):
     newTrainX = []
     newTrainY = []
+    setTo10 = 0
+    groundTruth = 0
+    nonGroundTruth = 0
     # find confident samples from first training set
     # obtain probability distribution of classes for each sample after the split and calculate its peak value
     # make predictions
@@ -87,11 +90,19 @@ def makeConfidentTrainingSets(model, corTrainX, corTrainY, peakThreshold):
 
         if np.isnan(peakValue) or peakValue > 10:
             peakValue = 10
+            setTo10 += 1
 
         # if confident add to list
         if predictedClass == np.argmax(corTrainY[i]) and peakValue >= peakThreshold:
             newTrainX.append(corTrainX[i])
             newTrainY.append(corTrainY[i])
+            if predictedClass == np.argmax(trainY[i]):
+                groundTruth += 1
+            else:
+                nonGroundTruth += 1
+    print('Number set to 10:', setTo10, 'out of', len(predictions))
+    print('Ground truth:', groundTruth)
+    print('Non ground truth:', nonGroundTruth)
     return np.array(newTrainX), np.array(newTrainY)
 
 
@@ -143,9 +154,9 @@ r = corModel.fit(trainX, corruptedTrainY, epochs=50,
 peakThresholds = [1, 2, 3, 5, 7, 10]
 for peakThreshold in peakThresholds:
     confTrainX, confTrainY = makeConfidentTrainingSets(
-        corModel, trainX, corruptedTrainY, peakThreshold)
+        corModel, trainX, corruptedTrainY, peakThreshold, trainY)
 
-    print('Number of samples found for',peakThreshold, ':', len(confTrainX))
+    print('Number of samples found for', peakThreshold, ':', len(confTrainX))
 
     # compile a new model
     weight_decay = 1e-4
