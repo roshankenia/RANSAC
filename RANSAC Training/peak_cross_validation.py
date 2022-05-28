@@ -86,7 +86,11 @@ def makeConfidentTrainingSets(model, corTrainX, corTrainY, peakThreshold, trainY
         # calculate peak value
         probSorted = sorted(sample)
         probSorted = probSorted[::-1]
-        peakValue = probSorted[0]/probSorted[1]
+        #sum all prob except max
+        probSum = 0
+        for j in range(1, len(probSorted)):
+            probSum += probSorted[j]
+        peakValue = probSorted[0]/probSum
 
         if np.isnan(peakValue) or peakValue > 10:
             peakValue = 10
