@@ -8,27 +8,23 @@ Original file is located at
 """
 import sys
 sys.path.append('../')
-import itertools
-from tensorflow.keras.callbacks import LearningRateScheduler
-from tensorflow.keras import losses
-from ResNet import ResNet20ForCIFAR10
-import os
-import tensorflow as tf
-import matplotlib.pyplot as plt
-from tensorflow import keras
-import random
-import numpy as np
-from scipy.stats import entropy
 from cifar10_ransac_utils import *
-
-
+from scipy.stats import entropy
+import numpy as np
+import random
+from tensorflow import keras
+import matplotlib.pyplot as plt
+import tensorflow as tf
+import os
+from ResNet import ResNet20ForCIFAR10
+from tensorflow.keras import losses
+from tensorflow.keras.callbacks import LearningRateScheduler
+import itertools
 
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
 os.environ["CUDA_VISIBLE_DEVICES"] = "6"  # (xxxx is your specific GPU ID)
 
-
 # method to add noisy labels to data
-
 def corruptData(trainY, noisePercentage):
     # create copies of labels
     copyTrainY = trainY.copy()
@@ -86,7 +82,7 @@ def trainModel(X, Y):
     return model
 
 
-def makeConfidentTrainingSets(model, corTrainX, corTrainY, entropyThreshold, peakThreshold):
+def makeConfidentTrainingSets(model, corTrainX, corTrainY, entropyThreshold, peakThreshold, trainY):
     newTrainX = []
     newTrainY = []
     confidentIndexes = []
@@ -95,6 +91,10 @@ def makeConfidentTrainingSets(model, corTrainX, corTrainY, entropyThreshold, pea
     # make predictions
     entropies = []
     peaks = []
+    groundTruthDouble = 0
+    nonGroundTruth = 0
+    groundTruthOnly = 0
+
     predictions = model.predict(corTrainX)
     # find entropy for every sample and decide if confident
     for i in range(len(predictions)):
@@ -114,13 +114,30 @@ def makeConfidentTrainingSets(model, corTrainX, corTrainY, entropyThreshold, pea
 
         # if confident add to list
         if predictedClass == np.argmax(corTrainY[i]) and sampleEntropy <= entropyThreshold and peakValue >= peakThreshold:
+            #only add if correct class as well
+            if predictedClass == np.argmax(trainY[i]):
+                newTrainX.append(corTrainX[i])
+                newTrainY.append(corTrainY[i])
+                confidentIndexes.append(i)
+                groundTruthDouble += 1
+            else:
+                newTrainX.append(corTrainX[i])
+                newTrainY.append(corTrainY[i])
+                confidentIndexes.append(i)
+                nonGroundTruth += 1
+        # check if model predicted correct class but is mislabeled data
+        elif predictedClass != np.argmax(corTrainY[i]) and predictedClass == np.argmax(trainY[i]) and sampleEntropy <= entropyThreshold and peakValue >= peakThreshold:
             newTrainX.append(corTrainX[i])
             newTrainY.append(corTrainY[i])
             confidentIndexes.append(i)
+            groundTruthOnly += 1
 
         entropies.append(sampleEntropy)
         peaks.append(peakValue)
 
+    print('Label match both:', groundTruthDouble)
+    print('Label match only training set:', nonGroundTruth)
+    print('Label match only ground truth:', groundTruthOnly)
     print('saving images')
 
     indices = list(range(len(corTrainX)))
@@ -162,7 +179,7 @@ for p in range(5):
 
     # find samples that this model is confident on
     newTrainX, newTrainY, confidentIndexes = makeConfidentTrainingSets(
-        confidenceModel, trainX, trainYMislabeled, entropyThreshold, peakThreshold)
+        confidenceModel, trainX, trainYMislabeled, entropyThreshold, peakThreshold, trainY)
 
     # add 1 to every confident image
     for index in confidentIndexes:
