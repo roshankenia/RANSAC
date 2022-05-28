@@ -71,7 +71,7 @@ def splitTrainingData(trainX, trainY, splitPercentage):
 def makeConfidentTrainingSets(model, corTrainX, corTrainY, peakThreshold, trainY):
     newTrainX = []
     newTrainY = []
-    setTo10 = 0
+    setTo100 = 0
     groundTruth = 0
     nonGroundTruth = 0
     # find confident samples from first training set
@@ -92,9 +92,9 @@ def makeConfidentTrainingSets(model, corTrainX, corTrainY, peakThreshold, trainY
             probSum += probSorted[j]
         peakValue = probSorted[0]/probSum
 
-        if np.isnan(peakValue) or peakValue > 10:
-            peakValue = 10
-            setTo10 += 1
+        if np.isnan(peakValue) or peakValue > 100:
+            peakValue = 100
+            setTo100 += 1
 
         # if confident add to list
         if predictedClass == np.argmax(corTrainY[i]) and peakValue >= peakThreshold:
@@ -104,7 +104,7 @@ def makeConfidentTrainingSets(model, corTrainX, corTrainY, peakThreshold, trainY
                 groundTruth += 1
             else:
                 nonGroundTruth += 1
-    print('Number set to 10:', setTo10, 'out of', len(predictions))
+    print('Number set to 10:', setTo100, 'out of', len(predictions))
     print('Ground truth:', groundTruth)
     print('Non ground truth:', nonGroundTruth)
     return np.array(newTrainX), np.array(newTrainY)
@@ -155,7 +155,7 @@ r = corModel.fit(trainX, corruptedTrainY, epochs=50,
 
 
 # obtain confident samples
-peakThresholds = [1, 2, 3, 5, 7, 10]
+peakThresholds = [5, 10, 25, 50, 100]
 for peakThreshold in peakThresholds:
     confTrainX, confTrainY = makeConfidentTrainingSets(
         corModel, trainX, corruptedTrainY, peakThreshold, trainY)
