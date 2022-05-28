@@ -92,7 +92,6 @@ def makeConfidentTrainingSets(model, corTrainX, corTrainY, peakThreshold):
         if predictedClass == np.argmax(corTrainY[i]) and peakValue >= peakThreshold:
             newTrainX.append(corTrainX[i])
             newTrainY.append(corTrainY[i])
-
     return np.array(newTrainX), np.array(newTrainY)
 
 
@@ -145,6 +144,8 @@ peakThresholds = [1, 2, 3, 5, 7, 10]
 for peakThreshold in peakThresholds:
     confTrainX, confTrainY = makeConfidentTrainingSets(
         corModel, trainX, corruptedTrainY, peakThreshold)
+
+    print('Number of samples found for',peakThreshold, ':', len(confTrainX))
 
     # compile a new model
     weight_decay = 1e-4
