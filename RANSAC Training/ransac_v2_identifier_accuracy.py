@@ -130,7 +130,7 @@ def makeConfidentTrainingSets(model, corTrainX, corTrainY, entropyThreshold, pea
                 confidentIndexes.append(i)
                 nonGroundTruth += 1
         # check if model predicted correct class but is mislabeled data
-        elif predictedClass != np.argmax(corTrainY[i]) and predictedClass == np.argmax(trainY[i]) and sampleEntropy <= entropyThreshold and peakValue >= peakThreshold:
+        elif predictedClass != np.argmax(corTrainY[i]) and predictedClass == np.argmax(trainY[i]):
             newTrainX.append(corTrainX[i])
             newTrainY.append(corTrainY[i])
             confidentIndexes.append(i)
@@ -164,7 +164,7 @@ cifar10_data = CIFAR10Data()
 trainX, trainY, testX, testY = cifar10_data.get_data(subtract_mean=True)
 
 # corrupt data
-noisePercentage = 0.5
+noisePercentage = 0.1
 trainYMislabeled = corruptData(trainY, noisePercentage)
 
 # print(upperBoundAccuracy)
