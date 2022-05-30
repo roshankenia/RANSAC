@@ -155,7 +155,7 @@ r = corModel.fit(trainX, corruptedTrainY, epochs=50,
 
 
 # obtain confident samples
-peakThresholds = [10, 50, 100, 250, 500, 1000]
+peakThresholds = [200, 300, 400, 450]
 for peakThreshold in peakThresholds:
     confTrainX, confTrainY = makeConfidentTrainingSets(
         corModel, trainX, corruptedTrainY, peakThreshold, trainY)
