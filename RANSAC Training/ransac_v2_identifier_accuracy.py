@@ -8,23 +8,26 @@ Original file is located at
 """
 import sys
 sys.path.append('../')
-from cifar10_ransac_utils import *
-from scipy.stats import entropy
-import numpy as np
-import random
-from tensorflow import keras
-import matplotlib.pyplot as plt
-import tensorflow as tf
-import os
-from ResNet import ResNet20ForCIFAR10
-from tensorflow.keras import losses
-from tensorflow.keras.callbacks import LearningRateScheduler
 import itertools
+from tensorflow.keras.callbacks import LearningRateScheduler
+from tensorflow.keras import losses
+from ResNet import ResNet20ForCIFAR10
+import os
+import tensorflow as tf
+import matplotlib.pyplot as plt
+from tensorflow import keras
+import random
+import numpy as np
+from scipy.stats import entropy
+from cifar10_ransac_utils import *
+
 
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
 os.environ["CUDA_VISIBLE_DEVICES"] = "6"  # (xxxx is your specific GPU ID)
 
 # method to add noisy labels to data
+
+
 def corruptData(trainY, noisePercentage):
     # create copies of labels
     copyTrainY = trainY.copy()
@@ -107,7 +110,7 @@ def makeConfidentTrainingSets(model, corTrainX, corTrainY, entropyThreshold, pea
         # calculate peak value
         probSorted = sorted(sample)
         probSorted = probSorted[::-1]
-        #sum all prob except max
+        # sum all prob except max
         probSum = 0
         for j in range(1, len(probSorted)):
             probSum += probSorted[j]
@@ -118,7 +121,7 @@ def makeConfidentTrainingSets(model, corTrainX, corTrainY, entropyThreshold, pea
 
         # if confident add to list
         if predictedClass == np.argmax(corTrainY[i]) and sampleEntropy <= entropyThreshold and peakValue >= peakThreshold:
-            #only add if correct class as well
+            # only add if correct class as well
             if predictedClass == np.argmax(trainY[i]):
                 newTrainX.append(corTrainX[i])
                 newTrainY.append(corTrainY[i])
@@ -164,7 +167,7 @@ cifar10_data = CIFAR10Data()
 trainX, trainY, testX, testY = cifar10_data.get_data(subtract_mean=True)
 
 # corrupt data
-noisePercentage = 0.25
+noisePercentage = 0.1
 trainYMislabeled = corruptData(trainY, noisePercentage)
 
 # print(upperBoundAccuracy)
@@ -175,8 +178,25 @@ print("Num GPUs Available: ", len(
 # collect best indexes over multiple models
 bestIndexes = list(itertools.repeat(0, len(trainX)))
 for p in range(5):
+    # select subset of data to train on
+    # calculate number of samples to be added to subset
+    numberTrain = int(0.6 * len(trainX))
+
+    # generate indexes to use
+    trainIndexes = random.sample(
+        range(0, len(trainX)), numberTrain)
+
+    # add subset samples to correct arrays
+    subsetTrainX = []
+    subsetTrainY = []
+    for index in trainIndexes:
+        subsetTrainX.append(trainX[index])
+        subsetTrainY.append(trainYMislabeled[index])
+    subsetTrainX = np.array(subsetTrainX)
+    subsetTrainY = np.array(subsetTrainY)
+
     # train model used to identify confident samples
-    confidenceModel = trainModel(trainX, trainYMislabeled)
+    confidenceModel = trainModel(subsetTrainX, subsetTrainY)
     # from cross validation
     entropyThreshold = .1
     peakThreshold = 400
