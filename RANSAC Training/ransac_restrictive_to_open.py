@@ -8,23 +8,25 @@ Original file is located at
 """
 import sys
 sys.path.append('../')
-from cifar10_ransac_utils import *
-from scipy.stats import entropy
-import numpy as np
-import random
-from tensorflow import keras
-import matplotlib.pyplot as plt
-import tensorflow as tf
-import os
-from ResNet import ResNet20ForCIFAR10
-from tensorflow.keras import losses
-from tensorflow.keras.callbacks import LearningRateScheduler
 import itertools
+from tensorflow.keras.callbacks import LearningRateScheduler
+from tensorflow.keras import losses
+from ResNet import ResNet20ForCIFAR10
+import os
+import tensorflow as tf
+import matplotlib.pyplot as plt
+from tensorflow import keras
+import random
+import numpy as np
+from scipy.stats import entropy
+from cifar10_ransac_utils import *
 
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
 os.environ["CUDA_VISIBLE_DEVICES"] = "6"  # (xxxx is your specific GPU ID)
 
 # method to add noisy labels to data
+
+
 def corruptData(trainY, noisePercentage):
     # create copies of labels
     copyTrainY = trainY.copy()
@@ -82,18 +84,14 @@ def trainModel(X, Y):
     return model
 
 
-def makeConfidentTrainingSets(model, corTrainX, corTrainY, entropyThreshold, peakThreshold, trainY):
+def makeConfidentTrainingSets(model, corTrainX, corTrainY, entropyThreshold, peakThreshold):
     newTrainX = []
     newTrainY = []
-    confidentIndexes = []
     # find confident samples from first training set
     # obtain probability distribution of classes for each sample after the split and calculate its entropy
     # make predictions
     entropies = []
     peaks = []
-    groundTruthDouble = 0
-    nonGroundTruth = 0
-    groundTruthOnly = 0
 
     predictions = model.predict(corTrainX)
     # find entropy for every sample and decide if confident
@@ -107,37 +105,23 @@ def makeConfidentTrainingSets(model, corTrainX, corTrainY, entropyThreshold, pea
         # calculate peak value
         probSorted = sorted(sample)
         probSorted = probSorted[::-1]
-        peakValue = probSorted[0]/probSorted[1]
+        # sum all prob except max
+        probSum = 0
+        for j in range(1, len(probSorted)):
+            probSum += probSorted[j]
+        peakValue = probSorted[0]/probSum
 
-        if np.isnan(peakValue) or peakValue > 10:
-            peakValue = 10
+        if np.isnan(peakValue) or peakValue > 1000:
+            peakValue = 1000
 
         # if confident add to list
         if predictedClass == np.argmax(corTrainY[i]) and sampleEntropy <= entropyThreshold and peakValue >= peakThreshold:
-            #only add if correct class as well
-            if predictedClass == np.argmax(trainY[i]):
-                newTrainX.append(corTrainX[i])
-                newTrainY.append(corTrainY[i])
-                confidentIndexes.append(i)
-                groundTruthDouble += 1
-            else:
-                newTrainX.append(corTrainX[i])
-                newTrainY.append(corTrainY[i])
-                confidentIndexes.append(i)
-                nonGroundTruth += 1
-        # check if model predicted correct class but is mislabeled data
-        elif predictedClass != np.argmax(corTrainY[i]) and predictedClass == np.argmax(trainY[i]) and sampleEntropy <= entropyThreshold and peakValue >= peakThreshold:
             newTrainX.append(corTrainX[i])
             newTrainY.append(corTrainY[i])
-            confidentIndexes.append(i)
-            groundTruthOnly += 1
 
         entropies.append(sampleEntropy)
         peaks.append(peakValue)
 
-    print('Label match both:', groundTruthDouble)
-    print('Label match only training set:', nonGroundTruth)
-    print('Label match only ground truth:', groundTruthOnly)
     print('saving images')
 
     indices = list(range(len(corTrainX)))
@@ -152,7 +136,7 @@ def makeConfidentTrainingSets(model, corTrainX, corTrainY, entropyThreshold, pea
     plt.savefig('peakvalues.png')
     plt.close()
 
-    return np.array(newTrainX), np.array(newTrainY), confidentIndexes
+    return np.array(newTrainX), np.array(newTrainY)
 
 
 # get data
@@ -160,7 +144,7 @@ cifar10_data = CIFAR10Data()
 trainX, trainY, testX, testY = cifar10_data.get_data(subtract_mean=True)
 
 # corrupt data
-noisePercentage = 0.5
+noisePercentage = 0.1
 trainYMislabeled = corruptData(trainY, noisePercentage)
 
 # print(upperBoundAccuracy)
@@ -168,117 +152,44 @@ trainYMislabeled = corruptData(trainY, noisePercentage)
 print("Num GPUs Available: ", len(
     tf.config.experimental.list_physical_devices('GPU')))
 
-# collect best indexes over multiple models
-bestIndexes = list(itertools.repeat(0, len(trainX)))
+# set thresholds
+entropyThresholds = [.1, .2, .3, .4, .5]
+peakThresholds = [400, 200, 100, 50, 25]
+
+# current training set
+currentTrainX = trainX
+currentTrainY = trainYMislabeled
+
 for p in range(5):
     # train model used to identify confident samples
-    confidenceModel = trainModel(trainX, trainYMislabeled)
+    confidenceModel = trainModel(currentTrainX, currentTrainY)
     # from cross validation
-    entropyThreshold = .1
-    peakThreshold = 10
+    entropyThreshold = entropyThresholds[p]
+    peakThreshold = peakThresholds[p]
 
     # find samples that this model is confident on
-    newTrainX, newTrainY, confidentIndexes = makeConfidentTrainingSets(
-        confidenceModel, trainX, trainYMislabeled, entropyThreshold, peakThreshold, trainY)
+    newTrainX, newTrainY = makeConfidentTrainingSets(
+        confidenceModel, currentTrainX, currentTrainY, entropyThreshold, peakThreshold)
 
-    # add 1 to every confident image
-    for index in confidentIndexes:
-        bestIndexes[index] += 1
+    # set current training sets
+    currentTrainX = newTrainX
+    currentTrainY = newTrainY
 
-
-# sort and preserve index
-bestSorted = np.argsort(bestIndexes)
-bestSorted = bestSorted[::-1]
-
-print('best 50 samples:')
-for g in range(50):
-    print(bestSorted[g], ':', bestIndexes[bestSorted[g]])
-
-percs = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1]
-accuracies = []
-correctLabelInCertains = []
-mislabelInCertains = []
-correctLabelInUncertains = []
-mislabelInUncertains = []
-
-for perc in percs:
-    print('Using', perc, 'of confident samples')
-    # calculate number of samples to use
-    numberCertain = int(perc * len(bestIndexes))
-
-    # make new datasets for the most confident samples
-    bestTrainX = []
-    bestTrainY = []
-
-    correctLabelInCertain = 0
-    mislabelInCertain = 0
-    correctLabelInUncertain = 0
-    mislabelInUncertain = 0
-
-    # take certain samples and count those that were correctly and incorrectly identified
-    for i in range(numberCertain):
-        bestTrainX.append(trainX[bestSorted[i]])
-        bestTrainY.append(trainYMislabeled[bestSorted[i]])
-
-        if np.argmax(trainYMislabeled[bestSorted[i]]) == np.argmax(trainY[bestSorted[i]]):
-            correctLabelInCertain += 1
-        else:
-            mislabelInCertain += 1
-
-    for j in range(numberCertain, len(bestSorted)):
-        if np.argmax(trainYMislabeled[bestSorted[j]]) == np.argmax(trainY[bestSorted[j]]):
-            correctLabelInUncertain += 1
-        else:
-            mislabelInUncertain += 1
-
-    correctLabelInCertains.append(correctLabelInCertain)
-    mislabelInCertains.append(mislabelInCertain)
-    correctLabelInUncertains.append(correctLabelInUncertain)
-    mislabelInUncertains.append(mislabelInUncertain)
-
-    # run experiments
-    # train a new model on these confident samples
-    bestTrainX = np.array(bestTrainX)
-    bestTrainY = np.array(bestTrainY)
-    ransacModel = trainModel(bestTrainX, bestTrainY)
-
-    # calculate accuracy of this model in using test data
-    accuracy = ransacModel.evaluate(testX, testY)[1]
-
-    accuracies.append(accuracy)
-
-    print('This model has an accuracy of', accuracy, 'on the testing data.\n')
-    print('This model had', correctLabelInCertain,
-          'correctly labeled samples in the certain training data out of', len(bestTrainY), '\n')
-    print('This model had', mislabelInCertain,
-          'mislabeled labeled samples in the certain training data out of', len(bestTrainY), '\n')
-    print('This model had', correctLabelInUncertain,
-          'correctly labeled samples in the certain training data out of', (len(bestIndexes) - len(bestTrainY)), '\n')
-    print('This model had', mislabelInUncertain,
-          'mislabeled labeled samples in the certain training data out of', (len(bestIndexes) - len(bestTrainY)), '\n')
+# #count how accurate model was
+# correctLabelInCertain = 0
+# mislabelInCertain = 0
+# for i in range(currentTrainX):
+#     if np.argmax(trainYMislabeled[bestSorted[i]]) == np.argmax(trainY[bestSorted[i]]):
+#         correctLabelInCertain += 1
+#     else:
+#         mislabelInCertain += 1
 
 
-print("accuracies:", accuracies)
-plt.plot(percs, accuracies)
-plt.savefig('accuracyChar.png')
-plt.close()
+# run experiments
+# train a new model on these confident samples
+ransacModel = trainModel(currentTrainX, currentTrainY)
 
-print("correctLabelInCertains:", correctLabelInCertains)
-plt.plot(percs, correctLabelInCertains)
-plt.savefig('correctLabelInCertains.png')
-plt.close()
+# calculate accuracy of this model in using test data
+accuracy = ransacModel.evaluate(testX, testY)[1]
 
-print("mislabelInCertains:", mislabelInCertains)
-plt.plot(percs, mislabelInCertains)
-plt.savefig('mislabelInCertains.png')
-plt.close()
-
-print("correctLabelInUncertains:", correctLabelInUncertains)
-plt.plot(percs, correctLabelInUncertains)
-plt.savefig('correctLabelInUncertains.png')
-plt.close()
-
-print("mislabelInUncertains:", mislabelInUncertains)
-plt.plot(percs, mislabelInUncertains)
-plt.savefig('mislabelInUncertains.png')
-plt.close()
+print('This model has an accuracy of', accuracy, 'on the testing data.\n')
