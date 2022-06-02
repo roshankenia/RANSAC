@@ -180,7 +180,7 @@ bestIndexes = list(itertools.repeat(0, len(trainX)))
 for p in range(5):
     # select subset of data to train on
     # calculate number of samples to be added to subset
-    numberTrain = int(0.8 * len(trainX))
+    numberTrain = int(0.9 * len(trainX))
 
     # generate indexes to use
     trainIndexes = random.sample(
