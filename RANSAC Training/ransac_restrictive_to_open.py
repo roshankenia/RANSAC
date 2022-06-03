@@ -156,6 +156,10 @@ print("Num GPUs Available: ", len(
 entropyThresholds = [.1, .2, .3, .4, .5]
 peakThresholds = [400, 200, 100, 50, 25]
 
+#reverse
+entropyThresholds = entropyThresholds[::-1]
+peakThresholds = peakThresholds[::-1]
+
 # current training set
 currentTrainX = trainX
 currentTrainY = trainYMislabeled
