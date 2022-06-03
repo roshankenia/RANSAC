@@ -232,7 +232,7 @@ for i in range(len(trainX)):
 
     # ensembleLabel = np.argmax(labels)
 
-    noisy = (trainY[i] == trainYMislabeled[i])
+    noisy = (np.argmax(trainY[i]) == np.argmax(trainYMislabeled[i]))
 
     pair = [avgEnt, avgPeak]
 
