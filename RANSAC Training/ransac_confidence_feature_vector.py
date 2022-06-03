@@ -8,18 +8,19 @@ Original file is located at
 """
 import sys
 sys.path.append('../')
-from cifar10_ransac_utils import *
-from scipy.stats import entropy
-import numpy as np
-import random
-from tensorflow import keras
-import matplotlib.pyplot as plt
-import tensorflow as tf
-import os
-from ResNet import ResNet20ForCIFAR10
-from tensorflow.keras import losses
-from tensorflow.keras.callbacks import LearningRateScheduler
 import itertools
+from tensorflow.keras.callbacks import LearningRateScheduler
+from tensorflow.keras import losses
+from ResNet import ResNet20ForCIFAR10
+import os
+import tensorflow as tf
+import matplotlib.pyplot as plt
+from tensorflow import keras
+import random
+import numpy as np
+from scipy.stats import entropy
+from cifar10_ransac_utils import *
+
 
 
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
@@ -231,12 +232,15 @@ for i in range(len(trainX)):
     elif not confident and not consistent:
         inconsistentAndUnconfident.append(pair)
 
-plt.scatter(*zip(*consistentAndConfident), label='Consistent and Confident')
-plt.scatter(*zip(*inconsistentAndConfident),
-            label='Inconsistent and Confident')
-plt.scatter(*zip(*consistentAndUnconfident), label='Consistent and Unonfident')
-plt.scatter(*zip(*inconsistentAndUnconfident),
+plt.scatter(*zip(*inconsistentAndUnconfident), s=0.7,
             label='Inconsistent and Unconfident')
+plt.scatter(*zip(*consistentAndConfident), s=0.7,
+            label='Consistent and Confident')
+plt.scatter(*zip(*inconsistentAndConfident), s=0.7,
+            label='Inconsistent and Confident')
+plt.scatter(*zip(*consistentAndUnconfident), s=0.7,
+            label='Consistent and Unconfident')
+
 plt.xlabel("Average Entropy over Iterations")
 plt.ylabel("Average Peak Value over Iterations")
 plt.legend(bbox_to_anchor=(1.05, 1))
