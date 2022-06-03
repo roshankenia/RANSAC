@@ -8,18 +8,18 @@ Original file is located at
 """
 import sys
 sys.path.append('../')
-import itertools
-from tensorflow.keras.callbacks import LearningRateScheduler
-from tensorflow.keras import losses
-from ResNet import ResNet20ForCIFAR10
-import os
-import tensorflow as tf
-import matplotlib.pyplot as plt
-from tensorflow import keras
-import random
-import numpy as np
-from scipy.stats import entropy
 from cifar10_ransac_utils import *
+from scipy.stats import entropy
+import numpy as np
+import random
+from tensorflow import keras
+import matplotlib.pyplot as plt
+import tensorflow as tf
+import os
+from ResNet import ResNet20ForCIFAR10
+from tensorflow.keras import losses
+from tensorflow.keras.callbacks import LearningRateScheduler
+import itertools
 
 
 
@@ -184,12 +184,18 @@ for p in range(5):
 
 # we first want to visualize the feature vector over the space
 
+# lets examine consistency and noisy data
 # lets examine that data points that have consistent/inconsistent labels
 
-consistentAndConfident = []
-inconsistentAndConfident = []
-consistentAndUnconfident = []
-inconsistentAndUnconfident = []
+# consistentAndConfident = []
+# inconsistentAndConfident = []
+# consistentAndUnconfident = []
+# inconsistentAndUnconfident = []
+
+consistentAndClean = []
+consistentAndNoisy = []
+inconsistentAndClean = []
+inconsistentAndNoisy = []
 
 # iterate through each samples iteration data
 
@@ -206,10 +212,14 @@ for i in range(len(trainX)):
     curLabel = iterData[0][0]
     consistent = True
 
+    # labels = [0,0,0,0,0,0,0,0,0,0]
+
     for it in iterData:
         confidence += it[3]
         ent += it[1]
         peak += it[2]
+
+        # labels[it[0]] += 1
 
         if it[0] != curLabel:
             consistent = False
@@ -220,33 +230,92 @@ for i in range(len(trainX)):
     avgEnt = ent/len(featureVector)
     avgPeak = peak/len(featureVector)
 
+    # ensembleLabel = np.argmax(labels)
+
+    noisy = (trainY[i] == trainYMislabeled[i])
+
     pair = [avgEnt, avgPeak]
 
-    # add to appropriate array
-    if confident and consistent:
-        consistentAndConfident.append(pair)
-    elif confident and not consistent:
-        inconsistentAndConfident.append(pair)
-    elif not confident and consistent:
-        consistentAndUnconfident.append(pair)
-    elif not confident and not consistent:
-        inconsistentAndUnconfident.append(pair)
+    # add to apropriate array
+    if consistent and noisy:
+        consistentAndNoisy.append(pair)
+    elif consistent and not noisy:
+        consistentAndClean.append(pair)
+    elif not consistent and noisy:
+        inconsistentAndNoisy.append(pair)
+    elif not consistent and not noisy:
+        inconsistentAndClean.append(pair)
 
-plt.scatter(*zip(*inconsistentAndUnconfident), s=0.7,
-            label='Inconsistent and Unconfident')
-plt.scatter(*zip(*consistentAndConfident), s=0.7,
-            label='Consistent and Confident')
-plt.scatter(*zip(*inconsistentAndConfident), s=0.7,
-            label='Inconsistent and Confident')
-plt.scatter(*zip(*consistentAndUnconfident), s=0.7,
-            label='Consistent and Unconfident')
-
+plt.scatter(*zip(*consistentAndNoisy),
+            label='Consistent and Noisy')
+plt.xlim([0, 1.2])
+plt.ylim([0, 1005])
 plt.xlabel("Average Entropy over Iterations")
 plt.ylabel("Average Peak Value over Iterations")
 plt.legend(bbox_to_anchor=(1.05, 1))
-plt.title('Consistence and Confidence For Samples')
-plt.savefig('consistenceAndConfidence.png')
+plt.title('Consistent and Noisy Samples')
+plt.savefig('consistentAndNoisy.png')
 plt.close()
+
+plt.scatter(*zip(*consistentAndClean),
+            label='Consistent and Clean')
+plt.xlim([0, 1.2])
+plt.ylim([0, 1005])
+plt.xlabel("Average Entropy over Iterations")
+plt.ylabel("Average Peak Value over Iterations")
+plt.legend(bbox_to_anchor=(1.05, 1))
+plt.title('Consistent and Clean Samples')
+plt.savefig('consistentAndClean.png')
+plt.close()
+
+plt.scatter(*zip(*inconsistentAndNoisy),
+            label='Inconsistent and Noisy')
+plt.xlim([0, 1.2])
+plt.ylim([0, 1005])
+plt.xlabel("Average Entropy over Iterations")
+plt.ylabel("Average Peak Value over Iterations")
+plt.legend(bbox_to_anchor=(1.05, 1))
+plt.title('Inconsistent and Noisy Samples')
+plt.savefig('inconsistentAndNoisy.png')
+plt.close()
+
+plt.scatter(*zip(*inconsistentAndClean),
+            label='Inconsistent and Clean')
+plt.xlim([0, 1.2])
+plt.ylim([0, 1005])
+plt.xlabel("Average Entropy over Iterations")
+plt.ylabel("Average Peak Value over Iterations")
+plt.legend(bbox_to_anchor=(1.05, 1))
+plt.title('Inconsistent and Clean Samples')
+plt.savefig('inconsistentAndClean.png')
+plt.close()
+
+
+#     # add to appropriate array
+#     if confident and consistent:
+#         consistentAndConfident.append(pair)
+#     elif confident and not consistent:
+#         inconsistentAndConfident.append(pair)
+#     elif not confident and consistent:
+#         consistentAndUnconfident.append(pair)
+#     elif not confident and not consistent:
+#         inconsistentAndUnconfident.append(pair)
+
+# plt.scatter(*zip(*inconsistentAndUnconfident), s=0.7,
+#             label='Inconsistent and Unconfident')
+# plt.scatter(*zip(*consistentAndConfident), s=0.7,
+#             label='Consistent and Confident')
+# plt.scatter(*zip(*inconsistentAndConfident), s=0.7,
+#             label='Inconsistent and Confident')
+# plt.scatter(*zip(*consistentAndUnconfident), s=0.7,
+#             label='Consistent and Unconfident')
+
+# plt.xlabel("Average Entropy over Iterations")
+# plt.ylabel("Average Peak Value over Iterations")
+# plt.legend(bbox_to_anchor=(1.05, 1))
+# plt.title('Consistence and Confidence For Samples')
+# plt.savefig('consistenceAndConfidence.png')
+# plt.close()
 
 # # lets look at average entropy and peak values for confident and unconfident samples over the 5 iterations
 # # arrays to hold data
