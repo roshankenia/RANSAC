@@ -8,18 +8,19 @@ Original file is located at
 """
 import sys
 sys.path.append('../')
-import itertools
-from tensorflow.keras.callbacks import LearningRateScheduler
-from tensorflow.keras import losses
-from ResNet import ResNet20ForCIFAR10
-import os
-import tensorflow as tf
-import matplotlib.pyplot as plt
-from tensorflow import keras
-import random
-import numpy as np
-from scipy.stats import entropy
 from cifar10_ransac_utils import *
+from scipy.stats import entropy
+import numpy as np
+import random
+from tensorflow import keras
+import matplotlib.pyplot as plt
+import tensorflow as tf
+import os
+from ResNet import ResNet20ForCIFAR10
+from tensorflow.keras import losses
+from tensorflow.keras.callbacks import LearningRateScheduler
+import itertools
+
 
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
 os.environ["CUDA_VISIBLE_DEVICES"] = "6"  # (xxxx is your specific GPU ID)
@@ -182,56 +183,117 @@ for p in range(5):
 
 # we first want to visualize the feature vector over the space
 
-# lets look at average entropy and peak values for confident and unconfident samples over the 5 iterations
-# arrays to hold data
-entropyConfident = []
-entropyUnconfident = []
-peakValConfident = []
-peakValUnconfident = []
+# lets examine that data points that have consistent/inconsistent labels
 
-# sum up data for each iteration and then average it
-for iterationData in featureVector:
-    entropyConfidentSum = []
-    entropyUnconfidentSum = []
-    peakValConfidentSum = []
-    peakValUnconfidentSum = []
+consistentAndConfident = []
+inconsistentAndConfident = []
+consistentAndUnconfident = []
+inconsistentAndUnconfident = []
 
-    for sample in iterationData:
-        # check if sample was confident or not
-        if sample[3] == 1:
-            entropyConfidentSum.append(sample[1])
-            peakValConfidentSum.append(sample[2])
-        else:
-            entropyUnconfidentSum.append(sample[1])
-            peakValUnconfidentSum.append(sample[2])
+# iterate through each samples iteration data
 
-    # average data
-    entropyConfident.append(np.average(entropyConfidentSum))
-    entropyUnconfident.append(np.average(entropyUnconfidentSum))
-    peakValConfident.append(np.average(peakValConfidentSum))
-    peakValUnconfident.append(np.average(peakValUnconfidentSum))
+for i in range(len(trainX)):
+    # get iteration data
+    iterData = []
+    for iter in featureVector:
+        iterData.append(iter[i])
 
-# graph data over iterations
-iterations = [1, 2, 3, 4, 5]
+    # add up confidence, entropy, and peak and check if label is consistent
+    confidence = 0
+    ent = 0
+    peak = 0
+    curLabel = iterData[0][0]
+    consistent = True
 
-plt.plot(iterations, entropyConfident, label='Confident Entropy Average')
-plt.plot(iterations, entropyUnconfident, label='Unconfident Entropy Average')
-plt.xlabel("Iteration")
-plt.ylabel("Average Entropy")
-plt.legend()
-plt.title('Average Entropy Over Iterations')
-plt.savefig('averageEntropyOverIterations.png')
+    for it in iterData:
+        confidence += it[3]
+        ent += it[1]
+        peak += it[2]
+
+        if it[0] != curLabel:
+            consistent = False
+
+    # determine confidence
+    confident = confidence > (len(featureVector)/2)
+    # calculate avg entropy and peak
+    avgEnt = ent/len(featureVector)
+    avgPeak = peak/len(featureVector)
+
+    pair = [avgEnt, avgPeak]
+
+    # add to appropriate array
+    if confident and consistent:
+        consistentAndConfident.append(pair)
+    elif confident and not consistent:
+        inconsistentAndConfident.append(pair)
+    elif not confident and consistent:
+        consistentAndUnconfident.append(pair)
+    elif not confident and not consistent:
+        inconsistentAndUnconfident.append(pair)
+
+plt.scatter(*zip(*consistentAndConfident), label='Consistent and Confident')
+plt.scatter(*zip(*inconsistentAndConfident),
+            label='Inconsistent and Confident')
+plt.scatter(*zip(*consistentAndUnconfident), label='Consistent and Unonfident')
+plt.scatter(*zip(*inconsistentAndUnconfident),
+            label='Inconsistent and Unconfident')
+plt.xlabel("Average Entropy over Iterations")
+plt.ylabel("Average Peak Value over Iterations")
+plt.legend(bbox_to_anchor=(1.05, 1))
+plt.title('Consistence and Confidence For Samples')
+plt.savefig('consistenceAndConfidence.png')
 plt.close()
 
-plt.plot(iterations, peakValConfident, label='Confident Peak Value Average')
-plt.plot(iterations, peakValUnconfident,
-         label='Unconfident Peak Value Average')
-plt.xlabel("Iteration")
-plt.ylabel("Average Peak Value")
-plt.legend()
-plt.title('Average Peak Value Over Iterations')
-plt.savefig('averagePeakValuesOverIterations.png')
-plt.close()
+# # lets look at average entropy and peak values for confident and unconfident samples over the 5 iterations
+# # arrays to hold data
+# entropyConfident = []
+# entropyUnconfident = []
+# peakValConfident = []
+# peakValUnconfident = []
+
+# # sum up data for each iteration and then average it
+# for iterationData in featureVector:
+#     entropyConfidentSum = []
+#     entropyUnconfidentSum = []
+#     peakValConfidentSum = []
+#     peakValUnconfidentSum = []
+
+#     for sample in iterationData:
+#         # check if sample was confident or not
+#         if sample[3] == 1:
+#             entropyConfidentSum.append(sample[1])
+#             peakValConfidentSum.append(sample[2])
+#         else:
+#             entropyUnconfidentSum.append(sample[1])
+#             peakValUnconfidentSum.append(sample[2])
+
+#     # average data
+#     entropyConfident.append(np.average(entropyConfidentSum))
+#     entropyUnconfident.append(np.average(entropyUnconfidentSum))
+#     peakValConfident.append(np.average(peakValConfidentSum))
+#     peakValUnconfident.append(np.average(peakValUnconfidentSum))
+
+# # graph data over iterations
+# iterations = [1, 2, 3, 4, 5]
+
+# plt.plot(iterations, entropyConfident, label='Confident Entropy Average')
+# plt.plot(iterations, entropyUnconfident, label='Unconfident Entropy Average')
+# plt.xlabel("Iteration")
+# plt.ylabel("Average Entropy")
+# plt.legend()
+# plt.title('Average Entropy Over Iterations')
+# plt.savefig('averageEntropyOverIterations.png')
+# plt.close()
+
+# plt.plot(iterations, peakValConfident, label='Confident Peak Value Average')
+# plt.plot(iterations, peakValUnconfident,
+#          label='Unconfident Peak Value Average')
+# plt.xlabel("Iteration")
+# plt.ylabel("Average Peak Value")
+# plt.legend()
+# plt.title('Average Peak Value Over Iterations')
+# plt.savefig('averagePeakValuesOverIterations.png')
+# plt.close()
 
 # # sort and preserve index
 # bestSorted = np.argsort(bestIndexes)
