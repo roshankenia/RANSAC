@@ -67,9 +67,9 @@ def trainModel(X, Y):
 
     def lr_scheduler(epoch):
         new_lr = lr
-        if epoch <= 21:
+        if epoch <= 10:
             pass
-        elif epoch > 21 and epoch <= 37:
+        elif epoch > 10 and epoch <= 22:
             new_lr = lr * 0.1
         else:
             new_lr = lr * 0.01
@@ -79,7 +79,7 @@ def trainModel(X, Y):
     reduce_lr = LearningRateScheduler(lr_scheduler)
 
     # fit model
-    model.fit(X, Y, epochs=50,
+    model.fit(X, Y, epochs=30,
               batch_size=128, callbacks=[reduce_lr])
 
     return model
