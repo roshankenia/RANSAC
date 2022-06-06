@@ -177,7 +177,7 @@ print("Num GPUs Available: ", len(
 
 # collect best indexes over multiple models
 bestIndexes = list(itertools.repeat(0, len(trainX)))
-for p in range(5):
+for p in range(10):
     # select subset of data to train on
     # calculate number of samples to be added to subset
     numberTrain = int(0.75 * len(trainX))
