@@ -67,9 +67,9 @@ def trainModel(X, Y):
 
     def lr_scheduler(epoch):
         new_lr = lr
-        if epoch <= 10:
+        if epoch <= 21:
             pass
-        elif epoch > 10 and epoch <= 22:
+        elif epoch > 21 and epoch <= 37:
             new_lr = lr * 0.1
         else:
             new_lr = lr * 0.01
@@ -79,7 +79,7 @@ def trainModel(X, Y):
     reduce_lr = LearningRateScheduler(lr_scheduler)
 
     # fit model
-    model.fit(X, Y, epochs=30,
+    model.fit(X, Y, epochs=50,
               batch_size=128, callbacks=[reduce_lr])
 
     return model
@@ -177,10 +177,10 @@ print("Num GPUs Available: ", len(
 
 # collect best indexes over multiple models
 bestIndexes = list(itertools.repeat(0, len(trainX)))
-for p in range(10):
+for p in range(5):
     # select subset of data to train on
     # calculate number of samples to be added to subset
-    numberTrain = int(0.75 * len(trainX))
+    numberTrain = int(1 * len(trainX))
 
     # generate indexes to use
     trainIndexes = random.sample(
