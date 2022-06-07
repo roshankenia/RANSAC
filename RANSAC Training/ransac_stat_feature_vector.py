@@ -239,7 +239,7 @@ tsne_result_df = pd.DataFrame(
     {'tSNE Feature 1': tsne_result[:, 0], 'tSNE Feature 2': tsne_result[:, 1], 'label': noiseVector})
 fig, ax = plt.subplots(figsize=(10, 10))
 sns.scatterplot(x='tSNE Feature 1', y='tSNE Feature 2',
-                hue='label', data=tsne_result_df, ax=ax, s=120)
+                hue='label', data=tsne_result_df, ax=ax, s=10)
 lim = (tsne_result.min()-5, tsne_result.max()+5)
 plt.title('Average and Variance of Entropy and Peak Value Reduced')
 ax.set_xlim(lim)
