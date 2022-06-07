@@ -8,18 +8,21 @@ Original file is located at
 """
 import sys
 sys.path.append('../')
-from cifar10_ransac_utils import *
-from scipy.stats import entropy
-import numpy as np
-import random
-from tensorflow import keras
-import matplotlib.pyplot as plt
-import tensorflow as tf
-import os
-from ResNet import ResNet20ForCIFAR10
-from tensorflow.keras import losses
-from tensorflow.keras.callbacks import LearningRateScheduler
 import itertools
+from tensorflow.keras.callbacks import LearningRateScheduler
+from tensorflow.keras import losses
+from ResNet import ResNet20ForCIFAR10
+import os
+import tensorflow as tf
+import matplotlib.pyplot as plt
+from tensorflow import keras
+import random
+import numpy as np
+from scipy.stats import entropy
+from cifar10_ransac_utils import *
+from sklearn.manifold import TSNE
+import pandas as pd
+import seaborn as sns
 
 
 
@@ -184,19 +187,10 @@ for p in range(5):
 
 # we first want to visualize the feature vector over the space
 
-# lets examine consistency and noisy data
-# lets examine that data points that have consistent/inconsistent labels
-
-# consistentAndConfident = []
-# inconsistentAndConfident = []
-# consistentAndUnconfident = []
-# inconsistentAndUnconfident = []
-
-consistentAndClean = []
-consistentAndNoisy = []
-inconsistentAndClean = []
-inconsistentAndNoisy = []
-
+# lets first create a tensor for each sample over the iterations
+# this vector will contain the stats for each sample
+statVector = []
+noiseVector = []
 # iterate through each samples iteration data
 
 for i in range(len(trainX)):
@@ -205,87 +199,51 @@ for i in range(len(trainX)):
     for iter in featureVector:
         iterData.append(iter[i])
 
-    # add up confidence, entropy, and peak and check if label is consistent
-    confidence = 0
-    ent = 0
-    peak = 0
-    curLabel = iterData[0][0]
-    consistent = True
-
-    # labels = [0,0,0,0,0,0,0,0,0,0]
-
+    # keep track of the entropy and the peak value for the samples over each iteration
+    entVals = []
+    peakVals = []
     for it in iterData:
-        confidence += it[3]
-        ent += it[1]
-        peak += it[2]
+        entVals.append(it[1])
+        peakVals.append(it[2])
 
-        # labels[it[0]] += 1
-
-        if it[0] != curLabel:
-            consistent = False
-
-    # determine confidence
-    confident = confidence > (len(featureVector)/2)
     # calculate avg entropy and peak
-    avgEnt = ent/len(featureVector)
-    avgPeak = peak/len(featureVector)
+    avgEnt = np.average(entVals)
+    avgPeak = np.average(peakVals)
 
-    # ensembleLabel = np.argmax(labels)
+    # calculate variance for entropy and peak
+    varEnt = np.var(entVals)
+    varPeak = np.var(peakVals)
 
-    noisy = (np.argmax(trainY[i]) == np.argmax(trainYMislabeled[i]))
+    # add data to stat vector
+    data = [avgEnt, avgPeak, varEnt, varPeak]
+    statVector.append(data)
 
-    pair = [avgEnt, avgPeak]
+    # decide whether this was noisy data or not
+    if np.argmax(trainY[i]) == np.argmax(trainYMislabeled[i]):
+        noiseVector.append(1)
+    else:
+        noiseVector.append(0)
 
-    # add to apropriate array
-    if consistent and noisy:
-        consistentAndNoisy.append(pair)
-    elif consistent and not noisy:
-        consistentAndClean.append(pair)
-    elif not consistent and noisy:
-        inconsistentAndNoisy.append(pair)
-    elif not consistent and not noisy:
-        inconsistentAndClean.append(pair)
+statVector = np.array(statVector)
+noiseVector = np.array(noiseVector)
 
-plt.scatter(*zip(*consistentAndNoisy),
-            label='Consistent and Noisy')
-plt.xlim([0, 1.2])
-plt.ylim([0, 1005])
-plt.xlabel("Average Entropy over Iterations")
-plt.ylabel("Average Peak Value over Iterations")
-plt.legend(bbox_to_anchor=(1.05, 1))
-plt.title('Consistent and Noisy Samples')
-plt.savefig('consistentAndNoisy.png')
-plt.close()
-
-plt.scatter(*zip(*consistentAndClean),
-            label='Consistent and Clean')
-plt.xlim([0, 1.2])
-plt.ylim([0, 1005])
-plt.xlabel("Average Entropy over Iterations")
-plt.ylabel("Average Peak Value over Iterations")
-plt.legend(bbox_to_anchor=(1.05, 1))
-plt.title('Consistent and Clean Samples')
-plt.savefig('consistentAndClean.png')
-plt.close()
-
-plt.scatter(*zip(*inconsistentAndNoisy),
-            label='Inconsistent and Noisy')
-plt.xlim([0, 1.2])
-plt.ylim([0, 1005])
-plt.xlabel("Average Entropy over Iterations")
-plt.ylabel("Average Peak Value over Iterations")
-plt.legend(bbox_to_anchor=(1.05, 1))
-plt.title('Inconsistent and Noisy Samples')
-plt.savefig('inconsistentAndNoisy.png')
-plt.close()
-
-plt.scatter(*zip(*inconsistentAndClean),
-            label='Inconsistent and Clean')
-plt.xlim([0, 1.2])
-plt.ylim([0, 1005])
-plt.xlabel("Average Entropy over Iterations")
-plt.ylabel("Average Peak Value over Iterations")
-plt.legend(bbox_to_anchor=(1.05, 1))
-plt.title('Inconsistent and Clean Samples')
-plt.savefig('inconsistentAndClean.png')
-plt.close()
+# We want to get TSNE embedding with 2 dimensions
+n_components = 2
+tsne = TSNE(n_components)
+tsne_result = tsne.fit_transform(statVector)
+tsne_result.shape
+# Two dimensions for each of our images
+# Plot the result of our TSNE with the label color coded
+# A lot of the stuff here is about making the plot look pretty and not TSNE
+tsne_result_df = pd.DataFrame(
+    {'tSNE Feature 1': tsne_result[:, 0], 'tSNE Feature 2': tsne_result[:, 1], 'label': noiseVector})
+fig, ax = plt.subplots(figsize=(10, 10))
+sns.scatterplot(x='tSNE Feature 1', y='tSNE Feature 2',
+                hue='label', data=tsne_result_df, ax=ax, s=120)
+lim = (tsne_result.min()-5, tsne_result.max()+5)
+plt.title('Average and Variance of Entropy and Peak Value Reduced')
+ax.set_xlim(lim)
+ax.set_ylim(lim)
+ax.set_aspect('equal')
+ax.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.0)
+plt.savefig('tSNE-Results.png')
