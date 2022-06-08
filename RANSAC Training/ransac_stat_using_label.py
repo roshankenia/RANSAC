@@ -8,23 +8,21 @@ Original file is located at
 """
 import sys
 sys.path.append('../')
-import itertools
-from tensorflow.keras.callbacks import LearningRateScheduler
-from tensorflow.keras import losses
-from ResNet import ResNet20ForCIFAR10
-import os
-import tensorflow as tf
-import matplotlib.pyplot as plt
-from tensorflow import keras
-import random
-import numpy as np
-from scipy.stats import entropy
-from cifar10_ransac_utils import *
-from sklearn.manifold import TSNE
-import pandas as pd
 import seaborn as sns
-
-
+import pandas as pd
+from sklearn.manifold import TSNE
+from cifar10_ransac_utils import *
+from scipy.stats import entropy
+import numpy as np
+import random
+from tensorflow import keras
+import matplotlib.pyplot as plt
+import tensorflow as tf
+import os
+from ResNet import ResNet20ForCIFAR10
+from tensorflow.keras import losses
+from tensorflow.keras.callbacks import LearningRateScheduler
+import itertools
 
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
 os.environ["CUDA_VISIBLE_DEVICES"] = "6"  # (xxxx is your specific GPU ID)
@@ -154,7 +152,7 @@ print("Num GPUs Available: ", len(
 
 # collect best indexes over multiple models
 featureVector = []
-for p in range(5):
+for p in range(1):
     # select subset of data to train on
     # calculate number of samples to be added to subset
     numberTrain = int(0.8 * len(trainX))
@@ -188,9 +186,31 @@ for p in range(5):
 # we first want to visualize the feature vector over the space
 
 # lets first create a tensor for each sample over the iterations
-# this vector will contain the stats for each sample
-statVector = []
-noiseVector = []
+# this dict will contain the stats for each sample for each class
+statDict = {
+    '0': [],
+    '1': [],
+    '2': [],
+    '3': [],
+    '4': [],
+    '5': [],
+    '6': [],
+    '7': [],
+    '8': [],
+    '9': [],
+}
+noiseDict = {
+    '0': [],
+    '1': [],
+    '2': [],
+    '3': [],
+    '4': [],
+    '5': [],
+    '6': [],
+    '7': [],
+    '8': [],
+    '9': [],
+}
 # iterate through each samples iteration data
 
 for i in range(len(trainX)):
@@ -216,34 +236,45 @@ for i in range(len(trainX)):
 
     # add data to stat vector
     data = [avgEnt, avgPeak, varEnt, varPeak]
-    statVector.append(data)
+    noisyLabel = np.argmax(trainYMislabeled[i])
+    statDict[noisyLabel].append(data)
 
     # decide whether this was noisy data or not
     if np.argmax(trainY[i]) == np.argmax(trainYMislabeled[i]):
-        noiseVector.append(1)
+        noiseDict[noisyLabel].append(1)
     else:
-        noiseVector.append(0)
+        noiseDict[noisyLabel].append(0)
 
-statVector = np.array(statVector)
-noiseVector = np.array(noiseVector)
+print(statDict['0'])
+print(noiseDict['9'])
 
-# We want to get TSNE embedding with 2 dimensions
-n_components = 2
-tsne = TSNE(n_components)
-tsne_result = tsne.fit_transform(statVector)
-tsne_result.shape
-# Two dimensions for each of our images
-# Plot the result of our TSNE with the label color coded
-# A lot of the stuff here is about making the plot look pretty and not TSNE
-tsne_result_df = pd.DataFrame(
-    {'tSNE Feature 1': tsne_result[:, 0], 'tSNE Feature 2': tsne_result[:, 1], 'label': noiseVector})
-fig, ax = plt.subplots(figsize=(10, 10))
-sns.scatterplot(x='tSNE Feature 1', y='tSNE Feature 2',
-                hue='label', data=tsne_result_df, ax=ax, s=10)
-lim = (tsne_result.min()-5, tsne_result.max()+5)
-plt.title('Average and Variance of Entropy and Peak Value Reduced')
-ax.set_xlim(lim)
-ax.set_ylim(lim)
-ax.set_aspect('equal')
-ax.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.0)
-plt.savefig('tSNE-Results.png')
+# labels = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']
+
+# # iterate through data for each data and make plot
+
+# for label in labels:
+#     statVector = np.array(statDict[label])
+#     noiseVector = np.array(noiseDict[label])
+
+#     picName = "tSNE-Results-Class-" + label + ".png"
+
+#     # We want to get TSNE embedding with 2 dimensions
+#     n_components = 2
+#     tsne = TSNE(n_components)
+#     tsne_result = tsne.fit_transform(statVector)
+#     tsne_result.shape
+#     # Two dimensions for each of our images
+#     # Plot the result of our TSNE with the label color coded
+#     # A lot of the stuff here is about making the plot look pretty and not TSNE
+#     tsne_result_df = pd.DataFrame(
+#         {'tSNE Feature 1': tsne_result[:, 0], 'tSNE Feature 2': tsne_result[:, 1], 'label': noiseVector})
+#     fig, ax = plt.subplots(figsize=(10, 10))
+#     sns.scatterplot(x='tSNE Feature 1', y='tSNE Feature 2',
+#                     hue='label', data=tsne_result_df, ax=ax, s=10)
+#     lim = (tsne_result.min()-5, tsne_result.max()+5)
+#     plt.title('Average and Variance of Entropy and Peak Value Reduced Class '+label)
+#     ax.set_xlim(lim)
+#     ax.set_ylim(lim)
+#     ax.set_aspect('equal')
+#     ax.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.0)
+#     plt.savefig(picName)
