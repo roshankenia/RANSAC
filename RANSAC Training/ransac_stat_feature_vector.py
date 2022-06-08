@@ -221,11 +221,11 @@ for i in range(len(trainX)):
     avgPeak = np.average(peakVals)
 
     # calculate variance for entropy and peak
-    varEnt = np.std(entVals)
-    varPeak = np.std(peakVals)
+    stdEnt = np.std(entVals)
+    stdPeak = np.std(peakVals)
 
     # add data to stat vector
-    data = [avgEnt, avgPeak, varEnt, varPeak, confident, consistent]
+    data = [avgEnt, avgPeak, stdEnt, stdPeak] #, confident, consistent]
     statVector.append(data)
 
     # decide whether this was noisy data or not
