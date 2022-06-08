@@ -234,11 +234,11 @@ for i in range(len(trainX)):
     avgPeak = np.average(peakVals)
 
     # calculate variance for entropy and peak
-    varEnt = np.var(entVals)
-    varPeak = np.var(peakVals)
+    stdEnt = np.std(entVals)
+    stdPeak = np.std(peakVals)
 
     # add data to stat vector
-    data = [avgEnt, avgPeak, varEnt, varPeak]
+    data = [avgEnt, avgPeak, stdEnt, stdPeak]
     # noisyLabel = np.argmax(trainYMislabeled[i])
     # noisyLabelString = str(noisyLabel)
     ensembleLabel = np.argmax(predLabels)
