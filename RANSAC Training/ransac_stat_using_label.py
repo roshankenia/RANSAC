@@ -237,13 +237,14 @@ for i in range(len(trainX)):
     # add data to stat vector
     data = [avgEnt, avgPeak, varEnt, varPeak]
     noisyLabel = np.argmax(trainYMislabeled[i])
-    statDict[noisyLabel].append(data)
+    noisyLabelString = str(noisyLabel)
+    statDict[noisyLabelString].append(data)
 
     # decide whether this was noisy data or not
     if np.argmax(trainY[i]) == np.argmax(trainYMislabeled[i]):
-        noiseDict[noisyLabel].append(1)
+        noiseDict[noisyLabelString].append(1)
     else:
-        noiseDict[noisyLabel].append(0)
+        noiseDict[noisyLabelString].append(0)
 
 print(statDict['0'])
 print(noiseDict['9'])
