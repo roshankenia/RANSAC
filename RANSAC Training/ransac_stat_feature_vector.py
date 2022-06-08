@@ -155,7 +155,7 @@ featureVector = []
 for p in range(5):
     # select subset of data to train on
     # calculate number of samples to be added to subset
-    numberTrain = int(0.8 * len(trainX))
+    numberTrain = int(1 * len(trainX))
 
     # generate indexes to use
     trainIndexes = random.sample(
@@ -221,8 +221,8 @@ for i in range(len(trainX)):
     avgPeak = np.average(peakVals)
 
     # calculate variance for entropy and peak
-    varEnt = np.var(entVals)
-    varPeak = np.var(peakVals)
+    varEnt = np.std(entVals)
+    varPeak = np.std(peakVals)
 
     # add data to stat vector
     data = [avgEnt, avgPeak, varEnt, varPeak, confident, consistent]

@@ -152,10 +152,10 @@ print("Num GPUs Available: ", len(
 
 # collect best indexes over multiple models
 featureVector = []
-for p in range(1):
+for p in range(5):
     # select subset of data to train on
     # calculate number of samples to be added to subset
-    numberTrain = int(0.8 * len(trainX))
+    numberTrain = int(1 * len(trainX))
 
     # generate indexes to use
     trainIndexes = random.sample(
