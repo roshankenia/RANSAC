@@ -211,6 +211,7 @@ noiseDict = {
     '8': [],
     '9': [],
 }
+
 # iterate through each samples iteration data
 
 for i in range(len(trainX)):
@@ -222,9 +223,11 @@ for i in range(len(trainX)):
     # keep track of the entropy and the peak value for the samples over each iteration
     entVals = []
     peakVals = []
+    predLabels = [0,0,0,0,0,0,0,0,0,0]
     for it in iterData:
         entVals.append(it[1])
         peakVals.append(it[2])
+        predLabels[it[0]] += 1
 
     # calculate avg entropy and peak
     avgEnt = np.average(entVals)
@@ -236,15 +239,17 @@ for i in range(len(trainX)):
 
     # add data to stat vector
     data = [avgEnt, avgPeak, varEnt, varPeak]
-    noisyLabel = np.argmax(trainYMislabeled[i])
-    noisyLabelString = str(noisyLabel)
-    statDict[noisyLabelString].append(data)
+    # noisyLabel = np.argmax(trainYMislabeled[i])
+    # noisyLabelString = str(noisyLabel)
+    ensembleLabel = np.argmax(predLabels)
+    ensembleLabelString = str(ensembleLabel)
+    statDict[ensembleLabelString].append(data)
 
     # decide whether this was noisy data or not
     if np.argmax(trainY[i]) == np.argmax(trainYMislabeled[i]):
-        noiseDict[noisyLabelString].append(1)
+        noiseDict[ensembleLabelString].append(1)
     else:
-        noiseDict[noisyLabelString].append(0)
+        noiseDict[ensembleLabelString].append(0)
 
 labels = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']
 
@@ -254,7 +259,7 @@ for label in labels:
     statVector = np.array(statDict[label])
     noiseVector = np.array(noiseDict[label])
 
-    picName = "tSNE-Results-Class-" + label + ".png"
+    picName = "tSNE-Results-Ensemble-Class-" + label + ".png"
 
     # We want to get TSNE embedding with 2 dimensions
     n_components = 2
