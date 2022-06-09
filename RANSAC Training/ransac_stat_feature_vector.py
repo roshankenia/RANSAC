@@ -203,9 +203,11 @@ for i in range(len(trainX)):
     confidence = 0
     curLabel = iterData[0][0]
     consistent = 1
+    predLabels = [0,0,0,0,0,0,0,0,0,0]
     for it in iterData:
         entVals.append(it[1])
         peakVals.append(it[2])
+        predLabels[it[0]] += 1
         confidence += it[3]
 
         if it[0] != curLabel:
@@ -224,17 +226,23 @@ for i in range(len(trainX)):
     stdEnt = np.std(entVals)
     stdPeak = np.std(peakVals)
 
-    # find medians for entropy and peak
-    medEnt = np.median(entVals)
-    medPeak = np.median(peakVals)
+    #give a score on confidence
+    ensembleLabel = np.argmax(predLabels)
+    avgConfidence = 0
+    if ensembleLabel == np.argmax(trainYMislabeled[i]):
+        avgConfidence += 1
+    if avgEnt <= 0.1:
+        avgConfidence += 1
+    if avgPeak >= 400:
+        avgConfidence +=1
 
-    # # add data to stat vector
-    # data = [avgEnt, avgPeak, stdEnt, stdPeak, medEnt, medPeak, confident, consistent]
-    # statVector.append(data)
-
-    # lets try using the raw data itself
-    data = entVals + peakVals
+    # add data to stat vector
+    data = [avgEnt, avgPeak, stdEnt, stdPeak, avgConfidence] #confident, consistent]
     statVector.append(data)
+
+    # # lets try using the raw data itself
+    # data = entVals + peakVals
+    # statVector.append(data)
 
     # decide whether this was noisy data or not
     if np.argmax(trainY[i]) == np.argmax(trainYMislabeled[i]):
@@ -267,15 +275,14 @@ ax.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.0)
 plt.savefig('tSNE-Results.png')
 plt.close()
 
-# # lets also do a graph of just entropy vs peak value
-# result_df = pd.DataFrame(
-#     {'Entropy': statVector[:, 1], 'Peak Value': statVector[:, 2], 'label': noiseVector})
-# fig, ax = plt.subplots(figsize=(10, 10))
-# sns.scatterplot(x='Entropy', y='Peak Value',
-#                 hue='label', data=result_df, ax=ax, s=10)
-# plt.title('Average Entropy vs Peak Value')
-# plt.xlim([0, 1.2])
-# plt.ylim([0, 1005])
-# ax.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.0)
-# plt.savefig('ent-peak-results.png')
-# plt.close()
+# lets also do a graph of just entropy vs peak value
+print(statVector[:,1])
+result_df = pd.DataFrame(
+    {'Entropy': statVector[:, 1], 'Peak Value': statVector[:, 2], 'label': noiseVector})
+fig, ax = plt.subplots(figsize=(10, 10))
+sns.scatterplot(x='Entropy', y='Peak Value',
+                hue='label', data=result_df, ax=ax, s=10)
+plt.title('Average Entropy vs Peak Value')
+ax.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.0)
+plt.savefig('ent-peak-results.png')
+plt.close()
