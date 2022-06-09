@@ -238,7 +238,9 @@ for i in range(len(trainX)):
     stdPeak = np.std(peakVals)
 
     # add data to stat vector
-    data = [avgEnt, avgPeak, stdEnt, stdPeak]
+    # data = [avgEnt, avgPeak, stdEnt, stdPeak]
+    # try using raw data
+    data = entVals + peakVals
     # noisyLabel = np.argmax(trainYMislabeled[i])
     # noisyLabelString = str(noisyLabel)
     ensembleLabel = np.argmax(predLabels)
