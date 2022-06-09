@@ -8,21 +8,21 @@ Original file is located at
 """
 import sys
 sys.path.append('../')
-import itertools
-from tensorflow.keras.callbacks import LearningRateScheduler
-from tensorflow.keras import losses
-from ResNet import ResNet20ForCIFAR10
-import os
-import tensorflow as tf
-import matplotlib.pyplot as plt
-from tensorflow import keras
-import random
-import numpy as np
-from scipy.stats import entropy
-from cifar10_ransac_utils import *
-from sklearn.manifold import TSNE
-import pandas as pd
 import seaborn as sns
+import pandas as pd
+from sklearn.manifold import TSNE
+from cifar10_ransac_utils import *
+from scipy.stats import entropy
+import numpy as np
+import random
+from tensorflow import keras
+import matplotlib.pyplot as plt
+import tensorflow as tf
+import os
+from ResNet import ResNet20ForCIFAR10
+from tensorflow.keras import losses
+from tensorflow.keras.callbacks import LearningRateScheduler
+import itertools
 
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
 os.environ["CUDA_VISIBLE_DEVICES"] = "6"  # (xxxx is your specific GPU ID)
@@ -228,8 +228,12 @@ for i in range(len(trainX)):
     medEnt = np.median(entVals)
     medPeak = np.median(peakVals)
 
-    # add data to stat vector
-    data = [avgEnt, avgPeak, stdEnt, stdPeak, medEnt, medPeak, confident, consistent]
+    # # add data to stat vector
+    # data = [avgEnt, avgPeak, stdEnt, stdPeak, medEnt, medPeak, confident, consistent]
+    # statVector.append(data)
+
+    # lets try using the raw data itself
+    data = entVals + peakVals
     statVector.append(data)
 
     # decide whether this was noisy data or not
@@ -263,15 +267,15 @@ ax.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.0)
 plt.savefig('tSNE-Results.png')
 plt.close()
 
-# lets also do a graph of just entropy vs peak value
-result_df = pd.DataFrame(
-    {'Entropy': statVector[:, 1], 'Peak Value': statVector[:, 2], 'label': noiseVector})
-fig, ax = plt.subplots(figsize=(10, 10))
-sns.scatterplot(x='Entropy', y='Peak Value',
-                hue='label', data=result_df, ax=ax, s=10)
-plt.title('Average Entropy vs Peak Value')
-plt.xlim([0, 1.2])
-plt.ylim([0, 1005])
-ax.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.0)
-plt.savefig('ent-peak-results.png')
-plt.close()
+# # lets also do a graph of just entropy vs peak value
+# result_df = pd.DataFrame(
+#     {'Entropy': statVector[:, 1], 'Peak Value': statVector[:, 2], 'label': noiseVector})
+# fig, ax = plt.subplots(figsize=(10, 10))
+# sns.scatterplot(x='Entropy', y='Peak Value',
+#                 hue='label', data=result_df, ax=ax, s=10)
+# plt.title('Average Entropy vs Peak Value')
+# plt.xlim([0, 1.2])
+# plt.ylim([0, 1005])
+# ax.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.0)
+# plt.savefig('ent-peak-results.png')
+# plt.close()
