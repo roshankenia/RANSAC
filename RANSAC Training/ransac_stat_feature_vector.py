@@ -110,8 +110,8 @@ def makeConfidentTrainingSets(model, corTrainX, corTrainY, entropyThreshold, pea
             probSum += probSorted[j]
         peakValue = probSorted[0]/probSum
 
-        if np.isnan(peakValue) or peakValue > 450:
-            peakValue = 450
+        if np.isnan(peakValue) or peakValue > 1000:
+            peakValue = 1000
 
         confident = 0
         if predictedClass == np.argmax(corTrainY[i]) and sampleEntropy <= entropyThreshold and peakValue >= peakThreshold:
@@ -225,7 +225,7 @@ for i in range(len(trainX)):
     stdPeak = np.std(peakVals)
 
     # add data to stat vector
-    data = [avgEnt, avgPeak, stdEnt, stdPeak] #, confident, consistent]
+    data = [avgEnt, avgPeak, stdEnt, stdPeak, consistent] #, confident, consistent]
     statVector.append(data)
 
     # decide whether this was noisy data or not
