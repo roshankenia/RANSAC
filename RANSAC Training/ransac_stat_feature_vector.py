@@ -224,9 +224,12 @@ for i in range(len(trainX)):
     stdEnt = np.std(entVals)
     stdPeak = np.std(peakVals)
 
+    # find medians for entropy and peak
+    medEnt = np.median(entVals)
+    medPeak = np.median(peakVals)
+
     # add data to stat vector
-    # , confident, consistent]
-    data = [avgEnt, avgPeak, stdEnt, stdPeak, confident]
+    data = [avgEnt, avgPeak, stdEnt, stdPeak, medEnt, medPeak, confident, consistent]
     statVector.append(data)
 
     # decide whether this was noisy data or not
@@ -267,9 +270,8 @@ fig, ax = plt.subplots(figsize=(10, 10))
 sns.scatterplot(x='Entropy', y='Peak Value',
                 hue='label', data=result_df, ax=ax, s=10)
 plt.title('Average Entropy vs Peak Value')
-ax.set_xlim((0, 1.2))
-ax.set_ylim((0, 1005))
-ax.set_aspect('equal')
+plt.xlim([0, 1.2])
+plt.ylim([0, 1005])
 ax.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.0)
 plt.savefig('ent-peak-results.png')
 plt.close()
