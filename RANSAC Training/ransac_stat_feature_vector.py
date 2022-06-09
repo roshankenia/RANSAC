@@ -110,8 +110,8 @@ def makeConfidentTrainingSets(model, corTrainX, corTrainY, entropyThreshold, pea
             probSum += probSorted[j]
         peakValue = probSorted[0]/probSum
 
-        if np.isnan(peakValue) or peakValue > 1000:
-            peakValue = 1000
+        if np.isnan(peakValue) or peakValue > 100:
+            peakValue = 101
 
         confident = 0
         if predictedClass == np.argmax(corTrainY[i]) and sampleEntropy <= entropyThreshold and peakValue >= peakThreshold:
@@ -152,7 +152,7 @@ print("Num GPUs Available: ", len(
 
 # collect best indexes over multiple models
 featureVector = []
-for p in range(1):
+for p in range(2):
     # select subset of data to train on
     # calculate number of samples to be added to subset
     numberTrain = int(1 * len(trainX))
@@ -174,7 +174,7 @@ for p in range(1):
     confidenceModel = trainModel(subsetTrainX, subsetTrainY)
     # from cross validation
     entropyThreshold = .1
-    peakThreshold = 400
+    peakThreshold = 100
 
     # find samples that this model is confident on
     sampleArray = makeConfidentTrainingSets(
@@ -230,7 +230,7 @@ for i in range(len(trainX)):
     ensembleLabel = np.argmax(predLabels)
 
     # add data to stat vector
-    data = [avgEnt, avgPeak, stdEnt, stdPeak, ensembleLabel] #confident, consistent]
+    data = [avgEnt, avgPeak, stdEnt, stdPeak, confident, consistent]
     statVector.append(data)
 
     # # lets try using the raw data itself
