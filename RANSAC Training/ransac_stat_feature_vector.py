@@ -110,8 +110,8 @@ def makeConfidentTrainingSets(model, corTrainX, corTrainY, entropyThreshold, pea
             probSum += probSorted[j]
         peakValue = probSorted[0]/probSum
 
-        if np.isnan(peakValue) or peakValue > 1000:
-            peakValue = 1000
+        if np.isnan(peakValue) or peakValue > 450:
+            peakValue = 450
 
         confident = 0
         if predictedClass == np.argmax(corTrainY[i]) and sampleEntropy <= entropyThreshold and peakValue >= peakThreshold:
