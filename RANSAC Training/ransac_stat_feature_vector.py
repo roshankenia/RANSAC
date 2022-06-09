@@ -152,7 +152,7 @@ print("Num GPUs Available: ", len(
 
 # collect best indexes over multiple models
 featureVector = []
-for p in range(5):
+for p in range(1):
     # select subset of data to train on
     # calculate number of samples to be added to subset
     numberTrain = int(1 * len(trainX))
@@ -226,18 +226,11 @@ for i in range(len(trainX)):
     stdEnt = np.std(entVals)
     stdPeak = np.std(peakVals)
 
-    #give a score on confidence
+    #give an ensemble label
     ensembleLabel = np.argmax(predLabels)
-    avgConfidence = 0
-    if ensembleLabel == np.argmax(trainYMislabeled[i]):
-        avgConfidence += 1
-    if avgEnt <= 0.1:
-        avgConfidence += 1
-    if avgPeak >= 400:
-        avgConfidence +=1
 
     # add data to stat vector
-    data = [avgEnt, avgPeak, stdEnt, stdPeak, avgConfidence] #confident, consistent]
+    data = [avgEnt, avgPeak, stdEnt, stdPeak, ensembleLabel] #confident, consistent]
     statVector.append(data)
 
     # # lets try using the raw data itself
@@ -276,9 +269,8 @@ plt.savefig('tSNE-Results.png')
 plt.close()
 
 # lets also do a graph of just entropy vs peak value
-print(statVector[:,1])
 result_df = pd.DataFrame(
-    {'Entropy': statVector[:, 1], 'Peak Value': statVector[:, 2], 'label': noiseVector})
+    {'Entropy': statVector[:, 0], 'Peak Value': statVector[:, 1], 'label': noiseVector})
 fig, ax = plt.subplots(figsize=(10, 10))
 sns.scatterplot(x='Entropy', y='Peak Value',
                 hue='label', data=result_df, ax=ax, s=10)
