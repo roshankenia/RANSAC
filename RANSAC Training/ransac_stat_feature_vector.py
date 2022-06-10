@@ -229,13 +229,8 @@ for i in range(len(trainX)):
     #give an ensemble label
     ensembleLabel = np.argmax(predLabels)
 
-    #temporary noisy label
-    noisy = 0
-    if np.argmax(trainY[i]) == np.argmax(trainYMislabeled[i]):
-        noisy = 1
-
     # add data to stat vector
-    data = [avgEnt, avgPeak, stdEnt, stdPeak, confident, consistent, noisy]
+    data = [avgEnt, avgPeak, confident, consistent] #stdEnt, stdPeak,
     statVector.append(data)
 
     # # lets try using the raw data itself
@@ -282,4 +277,15 @@ sns.scatterplot(x='Entropy', y='Peak Value',
 plt.title('Average Entropy vs Peak Value')
 ax.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.0)
 plt.savefig('ent-peak-results.png')
+plt.close()
+
+# lets also do a graph of just confidence vs consistence
+result_df = pd.DataFrame(
+    {'Confident': statVector[:, 2], 'Consistent': statVector[:, 3], 'label': noiseVector})
+fig, ax = plt.subplots(figsize=(10, 10))
+sns.scatterplot(x='Confident', y='Consistent',
+                hue='label', data=result_df, ax=ax, s=10)
+plt.title('Confidence vs Consistence')
+ax.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.0)
+plt.savefig('conf-cons-results.png')
 plt.close()
