@@ -191,6 +191,8 @@ for p in range(5):
 statVector = []
 noiseVector = []
 # iterate through each samples iteration data
+confidentCount = 0
+consistentCount = 0
 
 for i in range(len(trainX)):
     # get iteration data
@@ -213,11 +215,7 @@ for i in range(len(trainX)):
 
         if it[0] != curLabel:
             consistent = 0
-
-    # see if sample was confident in majority of predictions
-    confident = 0
-    if confidence > (len(featureVector)/2):
-        confident = 1
+            consistentCount += 1
 
     # calculate avg entropy and peak
     avgEnt = np.average(entVals)
@@ -229,6 +227,16 @@ for i in range(len(trainX)):
 
     # give an ensemble label
     ensembleLabel = np.argmax(predLabels)
+
+    # see if sample was confident in majority of predictions
+    confident = 0
+    if confidence > (len(featureVector)/2):
+        confident = 1
+        confidentCount += 1
+        avgEnt = 0
+        avgPeak = 0
+        stdEnt = 0
+        stdPeak = 0
 
     # add data to stat vector
     data = [avgEnt, avgPeak, stdEnt, stdPeak, confident, consistent]
@@ -246,6 +254,8 @@ for i in range(len(trainX)):
 
 statVector = np.array(statVector)
 noiseVector = np.array(noiseVector)
+print('Number of samples that were inconsistent:', consistentCount)
+print('Number of samples that were confident:', confidentCount)
 
 # We want to get TSNE embedding with 2 dimensions
 n_components = 2
