@@ -229,8 +229,13 @@ for i in range(len(trainX)):
     #give an ensemble label
     ensembleLabel = np.argmax(predLabels)
 
+    #temporary noisy label
+    noisy = 0
+    if np.argmax(trainY[i]) == np.argmax(trainYMislabeled[i]):
+        noisy = 1
+
     # add data to stat vector
-    data = [avgEnt, avgPeak, stdEnt, stdPeak, confident, consistent]
+    data = [avgEnt, avgPeak, stdEnt, stdPeak, confident, consistent, noisy]
     statVector.append(data)
 
     # # lets try using the raw data itself
