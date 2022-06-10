@@ -8,21 +8,22 @@ Original file is located at
 """
 import sys
 sys.path.append('../')
-import seaborn as sns
-import pandas as pd
-from sklearn.manifold import TSNE
-from cifar10_ransac_utils import *
-from scipy.stats import entropy
-import numpy as np
-import random
-from tensorflow import keras
-import matplotlib.pyplot as plt
-import tensorflow as tf
-import os
-from ResNet import ResNet20ForCIFAR10
-from tensorflow.keras import losses
-from tensorflow.keras.callbacks import LearningRateScheduler
 import itertools
+from tensorflow.keras.callbacks import LearningRateScheduler
+from tensorflow.keras import losses
+from ResNet import ResNet20ForCIFAR10
+import os
+import tensorflow as tf
+import matplotlib.pyplot as plt
+from tensorflow import keras
+import random
+import numpy as np
+from scipy.stats import entropy
+from cifar10_ransac_utils import *
+from sklearn.cluster import KMeans
+from sklearn.manifold import TSNE
+import pandas as pd
+import seaborn as sns
 
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
 os.environ["CUDA_VISIBLE_DEVICES"] = "6"  # (xxxx is your specific GPU ID)
@@ -152,7 +153,7 @@ print("Num GPUs Available: ", len(
 
 # collect best indexes over multiple models
 featureVector = []
-for p in range(2):
+for p in range(5):
     # select subset of data to train on
     # calculate number of samples to be added to subset
     numberTrain = int(1 * len(trainX))
@@ -203,7 +204,7 @@ for i in range(len(trainX)):
     confidence = 0
     curLabel = iterData[0][0]
     consistent = 1
-    predLabels = [0,0,0,0,0,0,0,0,0,0]
+    predLabels = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
     for it in iterData:
         entVals.append(it[1])
         peakVals.append(it[2])
@@ -226,11 +227,11 @@ for i in range(len(trainX)):
     stdEnt = np.std(entVals)
     stdPeak = np.std(peakVals)
 
-    #give an ensemble label
+    # give an ensemble label
     ensembleLabel = np.argmax(predLabels)
 
     # add data to stat vector
-    data = [avgEnt, avgPeak, confident, consistent] #stdEnt, stdPeak,
+    data = [avgEnt, avgPeak, stdEnt, stdPeak, confident, consistent]
     statVector.append(data)
 
     # # lets try using the raw data itself
@@ -279,13 +280,36 @@ ax.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.0)
 plt.savefig('ent-peak-results.png')
 plt.close()
 
-# lets also do a graph of just confidence vs consistence
-result_df = pd.DataFrame(
-    {'Confident': statVector[:, 2], 'Consistent': statVector[:, 3], 'label': noiseVector})
+# now lets run kmeans to see if we can distinguish the two groups
+tsneData = pd.DataFrame(
+    {'tSNE Feature 1': tsne_result[:, 0], 'tSNE Feature 2': tsne_result[:, 1]})
+kmeans = KMeans(n_clusters=2, init='k-means++', random_state=0).fit(tsneData)
 fig, ax = plt.subplots(figsize=(10, 10))
-sns.scatterplot(x='Confident', y='Consistent',
-                hue='label', data=result_df, ax=ax, s=10)
-plt.title('Confidence vs Consistence')
+sns.scatterplot(x='tSNE Feature 1', y='tSNE Feature 2',
+                hue=kmeans.labels_, data=tsneData, ax=ax, s=10)
+lim = (tsne_result.min()-5, tsne_result.max()+5)
+plt.title('Predicted Label Using KMeans (2 Clusters)')
+ax.set_xlim(lim)
+ax.set_ylim(lim)
+ax.set_aspect('equal')
 ax.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.0)
-plt.savefig('conf-cons-results.png')
+plt.savefig('kmeans-2-Results.png')
 plt.close()
+print('cluster center:', kmeans.cluster_centers_)
+
+# kmeans with 10 groups
+tsneData = pd.DataFrame(
+    {'tSNE Feature 1': tsne_result[:, 0], 'tSNE Feature 2': tsne_result[:, 1]})
+kmeans = KMeans(n_clusters=10, init='k-means++', random_state=0).fit(tsneData)
+fig, ax = plt.subplots(figsize=(10, 10))
+sns.scatterplot(x='tSNE Feature 1', y='tSNE Feature 2',
+                hue=kmeans.labels_, data=tsneData, ax=ax, s=10)
+lim = (tsne_result.min()-5, tsne_result.max()+5)
+plt.title('Predicted Label Using KMeans (10 Clusters)')
+ax.set_xlim(lim)
+ax.set_ylim(lim)
+ax.set_aspect('equal')
+ax.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.0)
+plt.savefig('kmeans-10-Results.png')
+plt.close()
+print('cluster center:', kmeans.cluster_centers_)
