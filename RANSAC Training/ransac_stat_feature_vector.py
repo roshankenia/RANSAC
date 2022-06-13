@@ -139,7 +139,7 @@ def makeConfidentTrainingSets(model, corTrainX, corTrainY, entropyThreshold, pea
         sampleArray.append(sampleData)
 
         # if not confident but a clean label add to list (false negative)
-        if confident == 0 and np.argmax(corTrainY[i]) == np.argmax(trainY[i]):
+        if confident == 1 and np.argmax(corTrainY[i]) != np.argmax(trainY[i]):
             falseNegativeX.append(corTrainX[i])
             falseNegativeY.append(corTrainY[i])
             falseNegativeCount += 1
