@@ -89,6 +89,7 @@ def trainModel(X, Y):
 
 def makeConfidentTrainingSets(model, corTrainX, corTrainY, entropyThreshold, peakThreshold, trainY):
     sampleArray = []
+    classScores = [0, 0, 0, 0]
     # find confident samples from first training set
     # obtain probability distribution of classes for each sample after the split and calculate its entropy
     # make predictions
@@ -126,12 +127,16 @@ def makeConfidentTrainingSets(model, corTrainX, corTrainY, entropyThreshold, pea
 
         if predictedClass != np.argmax(corTrainY[i]) and predictedClass != np.argmax(trainY[i]):
             classificationScore = 0
+            classScores[0] += 1
         elif predictedClass == np.argmax(corTrainY[i]) and predictedClass != np.argmax(trainY[i]):
             classificationScore = 1
+            classScores[1] += 1
         elif predictedClass != np.argmax(corTrainY[i]) and predictedClass == np.argmax(trainY[i]):
             classificationScore = 2
+            classScores[2] += 1
         elif predictedClass == np.argmax(corTrainY[i]) and predictedClass == np.argmax(trainY[i]):
             classificationScore = 3
+            classScores[3] += 1
 
         sampleData = [predictedClass, sampleEntropy,
                       peakValue, confident, classificationScore]
@@ -144,6 +149,7 @@ def makeConfidentTrainingSets(model, corTrainX, corTrainY, entropyThreshold, pea
             falseNegativeCount += 1
 
     print('False negatives:', falseNegativeCount)
+    print('Class Scores:', classScores)
     return sampleArray, falseNegativeX, falseNegativeY
 
 
@@ -164,7 +170,7 @@ print("Num GPUs Available: ", len(
 featureVector = []
 addedInX = []
 addedInY = []
-for p in range(2):
+for p in range(5):
     # select subset of data to train on
     # calculate number of samples to be added to subset
     numberTrain = int(1 * len(trainX))
