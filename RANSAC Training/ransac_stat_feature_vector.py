@@ -8,22 +8,22 @@ Original file is located at
 """
 import sys
 sys.path.append('../')
-import itertools
-from tensorflow.keras.callbacks import LearningRateScheduler
-from tensorflow.keras import losses
-from ResNet import ResNet20ForCIFAR10
-import os
-import tensorflow as tf
-import matplotlib.pyplot as plt
-from tensorflow import keras
-import random
-import numpy as np
-from scipy.stats import entropy
-from cifar10_ransac_utils import *
-from sklearn.cluster import KMeans
-from sklearn.manifold import TSNE
-import pandas as pd
 import seaborn as sns
+import pandas as pd
+from sklearn.manifold import TSNE
+from sklearn.cluster import KMeans
+from cifar10_ransac_utils import *
+from scipy.stats import entropy
+import numpy as np
+import random
+from tensorflow import keras
+import matplotlib.pyplot as plt
+import tensorflow as tf
+import os
+from ResNet import ResNet20ForCIFAR10
+from tensorflow.keras import losses
+from tensorflow.keras.callbacks import LearningRateScheduler
+import itertools
 
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
 os.environ["CUDA_VISIBLE_DEVICES"] = "6"  # (xxxx is your specific GPU ID)
@@ -94,9 +94,9 @@ def makeConfidentTrainingSets(model, corTrainX, corTrainY, entropyThreshold, pea
     # obtain probability distribution of classes for each sample after the split and calculate its entropy
     # make predictions
     predictions = model.predict(corTrainX)
-    falseNegativeX = []
-    falseNegativeY = []
-    falseNegativeCount = 0
+    # falseNegativeX = []
+    # falseNegativeY = []
+    # falseNegativeCount = 0
     # find entropy for every sample and decide if confident
     for i in range(len(predictions)):
         sample = predictions[i]
@@ -138,14 +138,14 @@ def makeConfidentTrainingSets(model, corTrainX, corTrainY, entropyThreshold, pea
                       peakValue, confident, classificationScore]
         sampleArray.append(sampleData)
 
-        # if not confident but a clean label add to list (false negative)
-        if confident == 1 and np.argmax(corTrainY[i]) != np.argmax(trainY[i]):
-            falseNegativeX.append(corTrainX[i])
-            falseNegativeY.append(corTrainY[i])
-            falseNegativeCount += 1
+        # # if not confident but a clean label add to list (false negative)
+        # if confident == 0 and np.argmax(corTrainY[i]) == np.argmax(trainY[i]):
+        #     falseNegativeX.append(corTrainX[i])
+        #     falseNegativeY.append(corTrainY[i])
+        #     falseNegativeCount += 1
 
-    print('False negatives:', falseNegativeCount)
-    return sampleArray, falseNegativeX, falseNegativeY
+    # print('False negatives:', falseNegativeCount)
+    return sampleArray  # , falseNegativeX, falseNegativeY
 
 
 # get data
@@ -163,8 +163,8 @@ print("Num GPUs Available: ", len(
 
 # collect best indexes over multiple models
 featureVector = []
-addedInX = []
-addedInY = []
+# addedInX = []
+# addedInY = []
 for p in range(5):
     # select subset of data to train on
     # calculate number of samples to be added to subset
@@ -180,9 +180,9 @@ for p in range(5):
     for index in trainIndexes:
         subsetTrainX.append(trainX[index])
         subsetTrainY.append(trainYMislabeled[index])
-    # add in false negative samples to retrain on
-    subsetTrainX = subsetTrainX + addedInX
-    subsetTrainY = subsetTrainY + addedInY
+    # # add in false negative samples to retrain on
+    # subsetTrainX = subsetTrainX + addedInX
+    # subsetTrainY = subsetTrainY + addedInY
 
     subsetTrainX = np.array(subsetTrainX)
     subsetTrainY = np.array(subsetTrainY)
@@ -194,15 +194,15 @@ for p in range(5):
     peakThreshold = 100
 
     # find samples that this model is confident on
-    sampleArray, falseNegativeX, falseNegativeY = makeConfidentTrainingSets(
+    sampleArray = makeConfidentTrainingSets(
         confidenceModel, trainX, trainYMislabeled, entropyThreshold, peakThreshold, trainY)
 
     # add iteration data to feature vector
     featureVector.append(sampleArray)
 
-    # add false negative samples to add in list
-    addedInX = addedInX + falseNegativeX
-    addedInY = addedInY + falseNegativeY
+    # # add false negative samples to add in list
+    # addedInX = addedInX + falseNegativeX
+    # addedInY = addedInY + falseNegativeY
 
 # we first want to visualize the feature vector over the space
 
