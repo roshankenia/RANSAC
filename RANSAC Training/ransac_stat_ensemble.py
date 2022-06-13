@@ -8,27 +8,28 @@ Original file is located at
 """
 import sys
 sys.path.append('../')
-import seaborn as sns
-import pandas as pd
-from sklearn.manifold import TSNE
-from sklearn.cluster import KMeans
-from cifar10_ransac_utils import *
-from scipy.stats import entropy
-import numpy as np
-import random
-from tensorflow import keras
-import matplotlib.pyplot as plt
-import tensorflow as tf
-import os
-from ResNet import ResNet20ForCIFAR10
-from tensorflow.keras import losses
-from tensorflow.keras.callbacks import LearningRateScheduler
 import itertools
+from tensorflow.keras.callbacks import LearningRateScheduler
+from tensorflow.keras import losses
+from ResNet import ResNet20ForCIFAR10
+import os
+import tensorflow as tf
+import matplotlib.pyplot as plt
+from tensorflow import keras
+import random
+import numpy as np
+from scipy.stats import entropy
+from cifar10_ransac_utils import *
+from sklearn.cluster import KMeans
+from sklearn.manifold import TSNE
+import pandas as pd
+import seaborn as sns
 
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
 os.environ["CUDA_VISIBLE_DEVICES"] = "6"  # (xxxx is your specific GPU ID)
 
 # method to add noisy labels to data
+
 
 def corruptData(trainY, noisePercentage):
     # create copies of labels
@@ -87,38 +88,63 @@ def trainModel(X, Y):
     return model
 
 
-def makeConfidentTrainingSets(model, corTrainX, corTrainY, entropyThreshold, peakThreshold, trainY):
+def makeConfidentTrainingSets(firstConfidenceModel, secondConfidenceModel, corTrainX, corTrainY, entropyThreshold, peakThreshold, trainY):
     sampleArray = []
-    classScores = [0, 0, 0, 0]
+    classScores = [0, 0, 0, 0, 0]
     # find confident samples from first training set
     # obtain probability distribution of classes for each sample after the split and calculate its entropy
     # make predictions
-    predictions = model.predict(corTrainX)
-    falseNegativeX = []
-    falseNegativeY = []
-    falseNegativeCount = 0
+    firstPredictions = firstConfidenceModel.predict(corTrainX)
+    secondPredictions = secondConfidenceModel.predict(corTrainX)
+
+    # falseNegativeX = []
+    # falseNegativeY = []
+    # falseNegativeCount = 0
+
     # find entropy for every sample and decide if confident
-    for i in range(len(predictions)):
-        sample = predictions[i]
-        # get classification
-        predictedClass = np.argmax(sample)
-        # calculate entropy
-        sampleEntropy = entropy(sample)
+    for i in range(len(corTrainX)):
+        firstSample = firstPredictions[i]
+        secondSample = secondPredictions[i]
 
-        # calculate peak value
-        probSorted = sorted(sample)
-        probSorted = probSorted[::-1]
+        # get classification for each model
+        firstPredictedClass = np.argmax(firstSample)
+        secondPredictedClass = np.argmax(secondSample)
+
+        # check if these two predictions are the same
+        corresponding = False
+        predictedClass = -1
+        if firstPredictedClass == secondPredictedClass and firstPredictedClass == np.argmax(corTrainY[i]):
+            corresponding = True
+            predictedClass = firstPredictedClass
+
+        # calculate average entropy
+        sampleEntropy = (entropy(firstSample) + entropy(secondSample))/2
+
+        # calculate average peak value
+        firstProbSorted = sorted(firstSample)
+        firstProbSorted = firstProbSorted[::-1]
         # sum all prob except max
-        probSum = 0
-        for j in range(1, len(probSorted)):
-            probSum += probSorted[j]
-        peakValue = probSorted[0]/probSum
+        firstProbSum = 0
+        for j in range(1, len(firstProbSorted)):
+            firstProbSum += firstProbSorted[j]
+        firstPeakValue = firstProbSorted[0]/firstProbSum
+        if np.isnan(firstPeakValue) or firstPeakValue > 1000:
+            firstPeakValue = 1000
 
-        if np.isnan(peakValue) or peakValue > 1000:
-            peakValue = 1000
+        secondProbSorted = sorted(secondSample)
+        secondProbSorted = secondProbSorted[::-1]
+        # sum all prob except max
+        secondProbSum = 0
+        for j in range(1, len(secondProbSorted)):
+            secondProbSum += secondProbSorted[j]
+        secondPeakValue = secondProbSorted[0]/secondProbSum
+        if np.isnan(secondPeakValue) or secondPeakValue > 1000:
+            secondPeakValue = 1000
+
+        peakValue = (firstPeakValue + secondPeakValue)/2
 
         confident = 0
-        if predictedClass == np.argmax(corTrainY[i]) and sampleEntropy <= entropyThreshold and peakValue >= peakThreshold:
+        if corresponding and sampleEntropy <= entropyThreshold and peakValue >= peakThreshold:
             confident = 1
 
         # determine how accurate classification was
@@ -137,20 +163,22 @@ def makeConfidentTrainingSets(model, corTrainX, corTrainY, entropyThreshold, pea
         elif predictedClass == np.argmax(corTrainY[i]) and predictedClass == np.argmax(trainY[i]):
             classificationScore = 3
             classScores[3] += 1
+        elif predictedClass == -1:
+            classScores[4] += 1
 
         sampleData = [predictedClass, sampleEntropy,
                       peakValue, confident, classificationScore]
         sampleArray.append(sampleData)
 
-        # if not confident but a clean label add to list (false negative)
-        if confident == 0 and np.argmax(corTrainY[i]) == np.argmax(trainY[i]):
-            falseNegativeX.append(corTrainX[i])
-            falseNegativeY.append(corTrainY[i])
-            falseNegativeCount += 1
+        # # if not confident but a clean label add to list (false negative)
+        # if confident == 0 and np.argmax(corTrainY[i]) == np.argmax(trainY[i]):
+        #     falseNegativeX.append(corTrainX[i])
+        #     falseNegativeY.append(corTrainY[i])
+        #     falseNegativeCount += 1
 
-    print('False negatives:', falseNegativeCount)
+    # print('False negatives:', falseNegativeCount)
     print('Class Scores:', classScores)
-    return sampleArray, falseNegativeX, falseNegativeY
+    return sampleArray  # , falseNegativeX, falseNegativeY
 
 
 # get data
@@ -169,45 +197,61 @@ print("Num GPUs Available: ", len(
 # collect best indexes over multiple models
 featureVector = []
 addedInX = []
-addedInY = []
+# addedInY = []
 for p in range(5):
     # select subset of data to train on
     # calculate number of samples to be added to subset
-    numberTrain = int(1 * len(trainX))
+    numberTrain = int(0.5 * len(trainX))
 
     # generate indexes to use
-    trainIndexes = random.sample(
+    firstTrainIndexes = random.sample(
         range(0, len(trainX)), numberTrain)
 
-    # add subset samples to correct arrays
-    subsetTrainX = []
-    subsetTrainY = []
-    for index in trainIndexes:
-        subsetTrainX.append(trainX[index])
-        subsetTrainY.append(trainYMislabeled[index])
-    # add in false negative samples to retrain on
-    subsetTrainX = subsetTrainX + addedInX
-    subsetTrainY = subsetTrainY + addedInY
+    # add subset samples to correct arrays for first model
+    firstSubsetTrainX = []
+    firstSubsetTrainY = []
+    for index in firstTrainIndexes:
+        firstSubsetTrainX.append(trainX[index])
+        firstSubsetTrainY.append(trainYMislabeled[index])
+    firstSubsetTrainX = np.array(firstSubsetTrainX)
+    firstSubsetTrainY = np.array(firstSubsetTrainY)
 
-    subsetTrainX = np.array(subsetTrainX)
-    subsetTrainY = np.array(subsetTrainY)
+    # get indexes for second model
+    indexes = list(range(len(trainX)))
+    setIndexes = set(indexes)
+    setFirstTrainIndexes = set(firstTrainIndexes)
+    secondTrainIndexes = list(setIndexes - setFirstTrainIndexes)
+    # now get data for second model
+    secondSubsetTrainX = []
+    secondSubsetTrainY = []
+    for index in secondTrainIndexes:
+        secondSubsetTrainX.append(trainX[index])
+        secondSubsetTrainY.append(trainYMislabeled[index])
+    secondSubsetTrainX = np.array(secondSubsetTrainX)
+    secondSubsetTrainY = np.array(secondSubsetTrainY)
 
-    # train model used to identify confident samples
-    confidenceModel = trainModel(subsetTrainX, subsetTrainY)
+    # # add in false negative samples to retrain on
+    # subsetTrainX = subsetTrainX + addedInX
+    # subsetTrainY = subsetTrainY + addedInY
+
+    # train model used to identify confident samples on first set of data
+    firstConfidenceModel = trainModel(firstSubsetTrainX, firstSubsetTrainY)
+    # train a model on second set of data
+    secondConfidenceModel = trainModel(firstSubsetTrainX, firstSubsetTrainY)
     # from cross validation
     entropyThreshold = .1
     peakThreshold = 400
 
     # find samples that this model is confident on
-    sampleArray, falseNegativeX, falseNegativeY = makeConfidentTrainingSets(
-        confidenceModel, trainX, trainYMislabeled, entropyThreshold, peakThreshold, trainY)
+    sampleArray = makeConfidentTrainingSets(
+        firstConfidenceModel, secondConfidenceModel, trainX, trainYMislabeled, entropyThreshold, peakThreshold, trainY)
 
     # add iteration data to feature vector
     featureVector.append(sampleArray)
 
-    # add false negative samples to add in list
-    addedInX = addedInX + falseNegativeX
-    addedInY = addedInY + falseNegativeY
+    # # add false negative samples to add in list
+    # addedInX = addedInX + falseNegativeX
+    # addedInY = addedInY + falseNegativeY
 
 # we first want to visualize the feature vector over the space
 
