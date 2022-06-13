@@ -308,10 +308,10 @@ for i in range(len(trainX)):
         avgEnt = 0
         avgPeak = 0
         stdEnt = 0
-        stdPeak = 0
+        stdPeak = 0        
 
     # add data to stat vector
-    data = [avgEnt, avgPeak, stdEnt, stdPeak, confident, consistent]
+    data = [avgEnt, avgPeak, stdEnt, stdPeak, confident] #, consistent]
     statVector.append(data)
 
     # # lets try using the raw data itself
