@@ -94,9 +94,9 @@ def makeConfidentTrainingSets(model, corTrainX, corTrainY, entropyThreshold, pea
     # obtain probability distribution of classes for each sample after the split and calculate its entropy
     # make predictions
     predictions = model.predict(corTrainX)
-    # falseNegativeX = []
-    # falseNegativeY = []
-    # falseNegativeCount = 0
+    falseNegativeX = []
+    falseNegativeY = []
+    falseNegativeCount = 0
     # find entropy for every sample and decide if confident
     for i in range(len(predictions)):
         sample = predictions[i]
@@ -142,15 +142,15 @@ def makeConfidentTrainingSets(model, corTrainX, corTrainY, entropyThreshold, pea
                       peakValue, confident, classificationScore]
         sampleArray.append(sampleData)
 
-        # # if not confident but a clean label add to list (false negative)
-        # if confident == 0 and np.argmax(corTrainY[i]) == np.argmax(trainY[i]):
-        #     falseNegativeX.append(corTrainX[i])
-        #     falseNegativeY.append(corTrainY[i])
-        #     falseNegativeCount += 1
+        # if not confident but a clean label add to list (false negative)
+        if confident == 0 and np.argmax(corTrainY[i]) == np.argmax(trainY[i]):
+            falseNegativeX.append(corTrainX[i])
+            falseNegativeY.append(corTrainY[i])
+            falseNegativeCount += 1
 
-    # print('False negatives:', falseNegativeCount)
+    print('False negatives:', falseNegativeCount)
     print('Class Scores:', classScores)
-    return sampleArray #, falseNegativeX, falseNegativeY
+    return sampleArray, falseNegativeX, falseNegativeY
 
 
 # get data
@@ -168,12 +168,12 @@ print("Num GPUs Available: ", len(
 
 # collect best indexes over multiple models
 featureVector = []
-# addedInX = []
-# addedInY = []
+addedInX = []
+addedInY = []
 for p in range(3):
     # select subset of data to train on
     # calculate number of samples to be added to subset
-    numberTrain = int(0.75 * len(trainX))
+    numberTrain = int(1 * len(trainX))
 
     # generate indexes to use
     trainIndexes = random.sample(
@@ -185,9 +185,9 @@ for p in range(3):
     for index in trainIndexes:
         subsetTrainX.append(trainX[index])
         subsetTrainY.append(trainYMislabeled[index])
-    # # add in false negative samples to retrain on
-    # subsetTrainX = subsetTrainX + addedInX
-    # subsetTrainY = subsetTrainY + addedInY
+    # add in false negative samples to retrain on
+    subsetTrainX = subsetTrainX + addedInX
+    subsetTrainY = subsetTrainY + addedInY
 
     subsetTrainX = np.array(subsetTrainX)
     subsetTrainY = np.array(subsetTrainY)
@@ -199,15 +199,15 @@ for p in range(3):
     peakThreshold = 400
 
     # find samples that this model is confident on
-    sampleArray = makeConfidentTrainingSets(
+    sampleArray, falseNegativeX, falseNegativeY = makeConfidentTrainingSets(
         confidenceModel, trainX, trainYMislabeled, entropyThreshold, peakThreshold, trainY)
 
     # add iteration data to feature vector
     featureVector.append(sampleArray)
 
-    # # add false negative samples to add in list
-    # addedInX = addedInX + falseNegativeX
-    # addedInY = addedInY + falseNegativeY
+    # add false negative samples to add in list
+    addedInX = addedInX + falseNegativeX
+    addedInY = addedInY + falseNegativeY
 
 # we first want to visualize the feature vector over the space
 
@@ -331,6 +331,25 @@ ax.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.0)
 plt.savefig('kmeans-2-Results.png')
 plt.close()
 print('cluster center:', kmeans.cluster_centers_)
+
+# calculate accuracy
+normalCount = 0
+inverseCount = 0
+for l in range(len(kmeans.labels_)):
+    label = kmeans.labels_[l]
+    if label == noiseVector[l]:
+        normalCount += 1
+    else:
+        if label == 0:
+            if noiseVector[l] == 1:
+                inverseCount += 1
+        else:
+            if noiseVector[l] == 0:
+                inverseCount += 1
+print('KMeans had a normal accuracy of:', normalCount, 'out of', len(
+    noiseVector), 'which equals', (normalCount/len(noiseVector)))
+print('KMeans had an inverse accuracy of:', inverseCount, 'out of', len(
+    noiseVector), 'which equals', (inverseCount/len(noiseVector)))
 
 # kmeans with 10 groups
 tsneData = pd.DataFrame(
