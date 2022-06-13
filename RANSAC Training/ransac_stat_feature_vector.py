@@ -30,7 +30,6 @@ os.environ["CUDA_VISIBLE_DEVICES"] = "6"  # (xxxx is your specific GPU ID)
 
 # method to add noisy labels to data
 
-
 def corruptData(trainY, noisePercentage):
     # create copies of labels
     copyTrainY = trainY.copy()
@@ -94,9 +93,9 @@ def makeConfidentTrainingSets(model, corTrainX, corTrainY, entropyThreshold, pea
     # obtain probability distribution of classes for each sample after the split and calculate its entropy
     # make predictions
     predictions = model.predict(corTrainX)
-    # falseNegativeX = []
-    # falseNegativeY = []
-    # falseNegativeCount = 0
+    falseNegativeX = []
+    falseNegativeY = []
+    falseNegativeCount = 0
     # find entropy for every sample and decide if confident
     for i in range(len(predictions)):
         sample = predictions[i]
@@ -114,8 +113,8 @@ def makeConfidentTrainingSets(model, corTrainX, corTrainY, entropyThreshold, pea
             probSum += probSorted[j]
         peakValue = probSorted[0]/probSum
 
-        if np.isnan(peakValue) or peakValue > 100:
-            peakValue = 101
+        if np.isnan(peakValue) or peakValue > 1000:
+            peakValue = 1000
 
         confident = 0
         if predictedClass == np.argmax(corTrainY[i]) and sampleEntropy <= entropyThreshold and peakValue >= peakThreshold:
@@ -138,14 +137,14 @@ def makeConfidentTrainingSets(model, corTrainX, corTrainY, entropyThreshold, pea
                       peakValue, confident, classificationScore]
         sampleArray.append(sampleData)
 
-        # # if not confident but a clean label add to list (false negative)
-        # if confident == 0 and np.argmax(corTrainY[i]) == np.argmax(trainY[i]):
-        #     falseNegativeX.append(corTrainX[i])
-        #     falseNegativeY.append(corTrainY[i])
-        #     falseNegativeCount += 1
+        # if not confident but a clean label add to list (false negative)
+        if confident == 0 and np.argmax(corTrainY[i]) == np.argmax(trainY[i]):
+            falseNegativeX.append(corTrainX[i])
+            falseNegativeY.append(corTrainY[i])
+            falseNegativeCount += 1
 
-    # print('False negatives:', falseNegativeCount)
-    return sampleArray  # , falseNegativeX, falseNegativeY
+    print('False negatives:', falseNegativeCount)
+    return sampleArray, falseNegativeX, falseNegativeY
 
 
 # get data
@@ -163,9 +162,9 @@ print("Num GPUs Available: ", len(
 
 # collect best indexes over multiple models
 featureVector = []
-# addedInX = []
-# addedInY = []
-for p in range(5):
+addedInX = []
+addedInY = []
+for p in range(2):
     # select subset of data to train on
     # calculate number of samples to be added to subset
     numberTrain = int(1 * len(trainX))
@@ -180,9 +179,9 @@ for p in range(5):
     for index in trainIndexes:
         subsetTrainX.append(trainX[index])
         subsetTrainY.append(trainYMislabeled[index])
-    # # add in false negative samples to retrain on
-    # subsetTrainX = subsetTrainX + addedInX
-    # subsetTrainY = subsetTrainY + addedInY
+    # add in false negative samples to retrain on
+    subsetTrainX = subsetTrainX + addedInX
+    subsetTrainY = subsetTrainY + addedInY
 
     subsetTrainX = np.array(subsetTrainX)
     subsetTrainY = np.array(subsetTrainY)
@@ -191,18 +190,18 @@ for p in range(5):
     confidenceModel = trainModel(subsetTrainX, subsetTrainY)
     # from cross validation
     entropyThreshold = .1
-    peakThreshold = 100
+    peakThreshold = 400
 
     # find samples that this model is confident on
-    sampleArray = makeConfidentTrainingSets(
+    sampleArray, falseNegativeX, falseNegativeY = makeConfidentTrainingSets(
         confidenceModel, trainX, trainYMislabeled, entropyThreshold, peakThreshold, trainY)
 
     # add iteration data to feature vector
     featureVector.append(sampleArray)
 
-    # # add false negative samples to add in list
-    # addedInX = addedInX + falseNegativeX
-    # addedInY = addedInY + falseNegativeY
+    # add false negative samples to add in list
+    addedInX = addedInX + falseNegativeX
+    addedInY = addedInY + falseNegativeY
 
 # we first want to visualize the feature vector over the space
 
