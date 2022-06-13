@@ -94,9 +94,9 @@ def makeConfidentTrainingSets(model, corTrainX, corTrainY, entropyThreshold, pea
     # obtain probability distribution of classes for each sample after the split and calculate its entropy
     # make predictions
     predictions = model.predict(corTrainX)
-    falseNegativeX = []
-    falseNegativeY = []
-    falseNegativeCount = 0
+    # falseNegativeX = []
+    # falseNegativeY = []
+    # falseNegativeCount = 0
     # find entropy for every sample and decide if confident
     for i in range(len(predictions)):
         sample = predictions[i]
@@ -142,15 +142,15 @@ def makeConfidentTrainingSets(model, corTrainX, corTrainY, entropyThreshold, pea
                       peakValue, confident, classificationScore]
         sampleArray.append(sampleData)
 
-        # if not confident but a clean label add to list (false negative)
-        if confident == 0 and np.argmax(corTrainY[i]) == np.argmax(trainY[i]):
-            falseNegativeX.append(corTrainX[i])
-            falseNegativeY.append(corTrainY[i])
-            falseNegativeCount += 1
+        # # if not confident but a clean label add to list (false negative)
+        # if confident == 0 and np.argmax(corTrainY[i]) == np.argmax(trainY[i]):
+        #     falseNegativeX.append(corTrainX[i])
+        #     falseNegativeY.append(corTrainY[i])
+        #     falseNegativeCount += 1
 
-    print('False negatives:', falseNegativeCount)
+    # print('False negatives:', falseNegativeCount)
     print('Class Scores:', classScores)
-    return sampleArray, falseNegativeX, falseNegativeY
+    return sampleArray #, falseNegativeX, falseNegativeY
 
 
 # get data
@@ -168,12 +168,12 @@ print("Num GPUs Available: ", len(
 
 # collect best indexes over multiple models
 featureVector = []
-addedInX = []
-addedInY = []
-for p in range(5):
+# addedInX = []
+# addedInY = []
+for p in range(3):
     # select subset of data to train on
     # calculate number of samples to be added to subset
-    numberTrain = int(1 * len(trainX))
+    numberTrain = int(0.75 * len(trainX))
 
     # generate indexes to use
     trainIndexes = random.sample(
@@ -185,9 +185,9 @@ for p in range(5):
     for index in trainIndexes:
         subsetTrainX.append(trainX[index])
         subsetTrainY.append(trainYMislabeled[index])
-    # add in false negative samples to retrain on
-    subsetTrainX = subsetTrainX + addedInX
-    subsetTrainY = subsetTrainY + addedInY
+    # # add in false negative samples to retrain on
+    # subsetTrainX = subsetTrainX + addedInX
+    # subsetTrainY = subsetTrainY + addedInY
 
     subsetTrainX = np.array(subsetTrainX)
     subsetTrainY = np.array(subsetTrainY)
@@ -199,15 +199,15 @@ for p in range(5):
     peakThreshold = 400
 
     # find samples that this model is confident on
-    sampleArray, falseNegativeX, falseNegativeY = makeConfidentTrainingSets(
+    sampleArray = makeConfidentTrainingSets(
         confidenceModel, trainX, trainYMislabeled, entropyThreshold, peakThreshold, trainY)
 
     # add iteration data to feature vector
     featureVector.append(sampleArray)
 
-    # add false negative samples to add in list
-    addedInX = addedInX + falseNegativeX
-    addedInY = addedInY + falseNegativeY
+    # # add false negative samples to add in list
+    # addedInX = addedInX + falseNegativeX
+    # addedInY = addedInY + falseNegativeY
 
 # we first want to visualize the feature vector over the space
 
