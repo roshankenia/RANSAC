@@ -8,22 +8,22 @@ Original file is located at
 """
 import sys
 sys.path.append('../')
-import seaborn as sns
-import pandas as pd
-from sklearn.manifold import TSNE
-from sklearn.cluster import KMeans
-from cifar10_ransac_utils import *
-from scipy.stats import entropy
-import numpy as np
-import random
-from tensorflow import keras
-import matplotlib.pyplot as plt
-import tensorflow as tf
-import os
-from ResNet import ResNet20ForCIFAR10
-from tensorflow.keras import losses
-from tensorflow.keras.callbacks import LearningRateScheduler
 import itertools
+from tensorflow.keras.callbacks import LearningRateScheduler
+from tensorflow.keras import losses
+from ResNet import ResNet20ForCIFAR10
+import os
+import tensorflow as tf
+import matplotlib.pyplot as plt
+from tensorflow import keras
+import random
+import numpy as np
+from scipy.stats import entropy
+from cifar10_ransac_utils import *
+from sklearn.cluster import KMeans
+from sklearn.manifold import TSNE
+import pandas as pd
+import seaborn as sns
 
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
 os.environ["CUDA_VISIBLE_DEVICES"] = "6"  # (xxxx is your specific GPU ID)
@@ -308,10 +308,10 @@ for i in range(len(trainX)):
         avgEnt = 0
         avgPeak = 0
         stdEnt = 0
-        stdPeak = 0        
+        stdPeak = 0
 
     # add data to stat vector
-    data = [avgEnt, avgPeak, stdEnt, stdPeak, confident] #, consistent]
+    data = [avgEnt, avgPeak, stdEnt, stdPeak, confident]  # , consistent]
     statVector.append(data)
 
     # # lets try using the raw data itself
@@ -397,19 +397,34 @@ print('KMeans had a normal accuracy of:', normalCount, 'out of', len(
 print('KMeans had an inverse accuracy of:', inverseCount, 'out of', len(
     noiseVector), 'which equals', (inverseCount/len(noiseVector)))
 
-# kmeans with 10 groups
-tsneData = pd.DataFrame(
-    {'tSNE Feature 1': tsne_result[:, 0], 'tSNE Feature 2': tsne_result[:, 1]})
-kmeans = KMeans(n_clusters=10, init='k-means++', random_state=0).fit(tsneData)
-fig, ax = plt.subplots(figsize=(10, 10))
-sns.scatterplot(x='tSNE Feature 1', y='tSNE Feature 2',
-                hue=kmeans.labels_, data=tsneData, ax=ax, s=10)
-lim = (tsne_result.min()-5, tsne_result.max()+5)
-plt.title('Predicted Label Using KMeans (10 Clusters)')
-ax.set_xlim(lim)
-ax.set_ylim(lim)
-ax.set_aspect('equal')
-ax.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.0)
-plt.savefig('kmeans-10-Results.png')
-plt.close()
-print('cluster center:', kmeans.cluster_centers_)
+
+# now we want to train on the clean data
+# check which was more accurate
+normAcc = (normalCount/len(noiseVector))
+invAcc = (inverseCount/len(noiseVector))
+inverse = False
+if invAcc > normAcc:
+    inverse = True
+
+# create clean data arrays
+cleanTrainX = []
+cleanTrainY = []
+for i in range(len(kmeans.labels_)):
+    confLabel = kmeans.labels_[i]
+    # if normal labelling add if confident
+    if not inverse and confLabel == 1:
+        cleanTrainX.append(trainX[i])
+        cleanTrainY.append(trainYMislabeled[i])
+    # if inverse labelling add if not 1
+    elif inverse and confLabel == 0:
+        cleanTrainX.append(trainX[i])
+        cleanTrainY.append(trainYMislabeled[i])
+cleanTrainX = np.array(cleanTrainX)
+cleanTrainY = np.array(cleanTrainY)
+
+# create and train a new model
+cleanModel = trainModel(cleanTrainX, cleanTrainY)
+
+# calculate accuracy of this model in using test data
+accuracy = cleanModel.evaluate(testX, testY)[1]
+print('This model had an accuracy of', accuracy, 'on the test data.')
