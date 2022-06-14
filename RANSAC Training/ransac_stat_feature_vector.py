@@ -114,8 +114,8 @@ def makeConfidentTrainingSets(model, corTrainX, corTrainY, entropyThreshold, pea
             probSum += probSorted[j]
         peakValue = probSorted[0]/probSum
 
-        if np.isnan(peakValue) or peakValue > 1000:
-            peakValue = 1000
+        if np.isnan(peakValue) or peakValue > 100:
+            peakValue = 101
 
         confident = 0
         if predictedClass == np.argmax(corTrainY[i]) and sampleEntropy <= entropyThreshold and peakValue >= peakThreshold:
@@ -196,7 +196,7 @@ for p in range(5):
     confidenceModel = trainModel(subsetTrainX, subsetTrainY)
     # from cross validation
     entropyThreshold = .1
-    peakThreshold = 400
+    peakThreshold = 100
 
     # find samples that this model is confident on
     sampleArray = makeConfidentTrainingSets(
