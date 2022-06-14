@@ -277,9 +277,9 @@ for p in range(5):
 
     # train models on new training Ys
     firstConfidenceModel = trainModel(
-        trainX, firstModelTrainingY, firstConfidenceModel)
+        trainX, firstModelTrainingY)
     secondConfidenceModel = trainModel(
-        trainX, secondModelTrainingY, secondConfidenceModel)
+        trainX, secondModelTrainingY)
 
     # from cross validation
     entropyThreshold = .1
