@@ -1,22 +1,22 @@
 # -*- coding: utf-8 -*-
 import sys
 sys.path.append('../')
-import itertools
-from tensorflow.keras.callbacks import LearningRateScheduler
-from tensorflow.keras import losses
-from ResNet import ResNet20ForCIFAR10
-import os
-import tensorflow as tf
-import matplotlib.pyplot as plt
-from tensorflow import keras
-import random
-import numpy as np
-from scipy.stats import entropy
-from cifar10_ransac_utils import *
-from sklearn.cluster import KMeans
-from sklearn.manifold import TSNE
-import pandas as pd
 import seaborn as sns
+import pandas as pd
+from sklearn.manifold import TSNE
+from sklearn.cluster import KMeans
+from cifar10_ransac_utils import *
+from scipy.stats import entropy
+import numpy as np
+import random
+from tensorflow import keras
+import matplotlib.pyplot as plt
+import tensorflow as tf
+import os
+from ResNet import ResNet20ForCIFAR10
+from tensorflow.keras import losses
+from tensorflow.keras.callbacks import LearningRateScheduler
+import itertools
 
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
 os.environ["CUDA_VISIBLE_DEVICES"] = "6"  # (xxxx is your specific GPU ID)
@@ -60,6 +60,29 @@ def trainModel(X, Y):
     model.compile(optimizer=opt,
                   loss=losses.categorical_crossentropy,
                   metrics=['accuracy'])
+
+    def lr_scheduler(epoch):
+        new_lr = lr
+        if epoch <= 21:
+            pass
+        elif epoch > 21 and epoch <= 37:
+            new_lr = lr * 0.1
+        else:
+            new_lr = lr * 0.01
+        print('new lr:%.2e' % new_lr)
+        return new_lr
+
+    reduce_lr = LearningRateScheduler(lr_scheduler)
+
+    # fit model
+    model.fit(X, Y, epochs=50,
+              batch_size=128, callbacks=[reduce_lr])
+
+    return model
+
+
+def trainModelAlreadyInitialized(X, Y, model):
+    lr = 1e-1
 
     def lr_scheduler(epoch):
         new_lr = lr
@@ -185,55 +208,79 @@ trainYMislabeled = corruptData(trainY, noisePercentage)
 
 print("Num GPUs Available: ", len(
     tf.config.experimental.list_physical_devices('GPU')))
-
+# first create originating data sets and build to models to use them
 # collect best indexes over multiple models
 featureVector = []
 addedInX = []
 addedInY = []
+# select subset of data to train on
+# calculate number of samples to be added to subset
+numberTrain = int(0.5 * len(trainX))
+
+# generate indexes to use
+firstTrainIndexes = random.sample(
+    range(0, len(trainX)), numberTrain)
+
+# add subset samples to correct arrays for first model
+firstSubsetTrainX = []
+firstSubsetTrainY = []
+for index in firstTrainIndexes:
+    firstSubsetTrainX.append(trainX[index])
+    firstSubsetTrainY.append(trainYMislabeled[index])
+# add in false negative samples to retrain on
+firstSubsetTrainX = firstSubsetTrainX + addedInX
+firstSubsetTrainY = firstSubsetTrainY + addedInY
+
+firstSubsetTrainX = np.array(firstSubsetTrainX)
+firstSubsetTrainY = np.array(firstSubsetTrainY)
+
+# get indexes for second model
+indexes = list(range(len(trainX)))
+setIndexes = set(indexes)
+setFirstTrainIndexes = set(firstTrainIndexes)
+secondTrainIndexes = list(setIndexes - setFirstTrainIndexes)
+# now get data for second model
+secondSubsetTrainX = []
+secondSubsetTrainY = []
+for index in secondTrainIndexes:
+    secondSubsetTrainX.append(trainX[index])
+    secondSubsetTrainY.append(trainYMislabeled[index])
+# add in false negative samples to retrain on
+secondSubsetTrainX = secondSubsetTrainX + addedInX
+secondSubsetTrainY = secondSubsetTrainY + addedInY
+
+secondSubsetTrainX = np.array(secondSubsetTrainX)
+secondSubsetTrainY = np.array(secondSubsetTrainY)
+
+# train model used to identify confident samples on first set of data
+firstConfidenceModel = trainModel(firstSubsetTrainX, firstSubsetTrainY)
+# train a model on second set of data
+secondConfidenceModel = trainModel(firstSubsetTrainX, firstSubsetTrainY)
+
 for p in range(5):
-    # select subset of data to train on
-    # calculate number of samples to be added to subset
-    numberTrain = int(0.5 * len(trainX))
+    # now make predictions on the whole dataset and find the labels
+    firstPredictions = firstConfidenceModel.predict(trainX)
+    secondPredictions = secondConfidenceModel.predict(trainX)
 
-    # generate indexes to use
-    firstTrainIndexes = random.sample(
-        range(0, len(trainX)), numberTrain)
+    # find the label provided by these soft targets and set as training y
+    firstModelTrainingY = []
+    secondModelTrainingY = []
+    for l in range(len(firstPredictions)):
+        firstLabel = np.argmax(firstPredictions[l])
+        secondLabel = np.argmax(secondPredictions[l])
 
-    # add subset samples to correct arrays for first model
-    firstSubsetTrainX = []
-    firstSubsetTrainY = []
-    for index in firstTrainIndexes:
-        firstSubsetTrainX.append(trainX[index])
-        firstSubsetTrainY.append(trainYMislabeled[index])
-    # add in false negative samples to retrain on
-    firstSubsetTrainX = firstSubsetTrainX + addedInX
-    firstSubsetTrainY = firstSubsetTrainY + addedInY
+        # add to opposite dataset
+        firstModelTrainingY.append(secondLabel)
+        secondModelTrainingY.append(firstLabel)
+    firstModelTrainingY = np.array(firstModelTrainingY)
+    secondModelTrainingY = np.array(secondModelTrainingY)
 
-    firstSubsetTrainX = np.array(firstSubsetTrainX)
-    firstSubsetTrainY = np.array(firstSubsetTrainY)
+    # train models on new training Ys
+    firstConfidenceModel = trainModelAlreadyInitialized(
+        trainX, firstModelTrainingY, firstConfidenceModel)
+    secondConfidenceModel = trainModelAlreadyInitialized(
+        trainX, secondModelTrainingY, secondConfidenceModel)
 
-    # get indexes for second model
-    indexes = list(range(len(trainX)))
-    setIndexes = set(indexes)
-    setFirstTrainIndexes = set(firstTrainIndexes)
-    secondTrainIndexes = list(setIndexes - setFirstTrainIndexes)
-    # now get data for second model
-    secondSubsetTrainX = []
-    secondSubsetTrainY = []
-    for index in secondTrainIndexes:
-        secondSubsetTrainX.append(trainX[index])
-        secondSubsetTrainY.append(trainYMislabeled[index])
-    # add in false negative samples to retrain on
-    secondSubsetTrainX = secondSubsetTrainX + addedInX
-    secondSubsetTrainY = secondSubsetTrainY + addedInY
-
-    secondSubsetTrainX = np.array(secondSubsetTrainX)
-    secondSubsetTrainY = np.array(secondSubsetTrainY)
-
-    # train model used to identify confident samples on first set of data
-    firstConfidenceModel = trainModel(firstSubsetTrainX, firstSubsetTrainY)
-    # train a model on second set of data
-    secondConfidenceModel = trainModel(firstSubsetTrainX, firstSubsetTrainY)
     # from cross validation
     entropyThreshold = .1
     peakThreshold = 400
