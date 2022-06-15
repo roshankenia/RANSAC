@@ -266,6 +266,8 @@ for p in range(5):
     # find the label provided by these soft targets and set as training y
     firstModelTrainingY = []
     secondModelTrainingY = []
+    firstModelTrainingX = []
+    secondModelTrainingX = []
     for l in range(len(firstPredictions)):
         firstLabel = np.argmax(firstPredictions[l])
         secondLabel = np.argmax(secondPredictions[l])
@@ -279,10 +281,13 @@ for p in range(5):
         # add to opposite dataset
         firstModelTrainingY.append(secondMax)
         secondModelTrainingY.append(firstMax)
+
+        firstModelTrainingX.append(trainX[l])
+        secondModelTrainingX.append(trainX[l])
     # add in false negative samples to retrain on
-    firstModelTrainingX = trainX + addedInX
+    firstModelTrainingX = firstModelTrainingX + addedInX
     firstModelTrainingY = firstModelTrainingY + addedInY
-    secondModelTrainingX = trainX + addedInX
+    secondModelTrainingX = secondModelTrainingX + addedInX
     secondModelTrainingY = secondModelTrainingY + addedInY
 
     firstModelTrainingX = np.array(firstModelTrainingX)
