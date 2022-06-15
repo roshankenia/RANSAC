@@ -210,10 +210,6 @@ trainYMislabeled = corruptData(trainY, noisePercentage)
 print("Num GPUs Available: ", len(
     tf.config.experimental.list_physical_devices('GPU')))
 # first create originating data sets and build to models to use them
-# collect best indexes over multiple models
-featureVector = []
-addedInX = []
-addedInY = []
 # select subset of data to train on
 # calculate number of samples to be added to subset
 numberTrain = int(0.5 * len(trainX))
@@ -228,10 +224,6 @@ firstSubsetTrainY = []
 for index in firstTrainIndexes:
     firstSubsetTrainX.append(trainX[index])
     firstSubsetTrainY.append(trainYMislabeled[index])
-# add in false negative samples to retrain on
-firstSubsetTrainX = firstSubsetTrainX + addedInX
-firstSubsetTrainY = firstSubsetTrainY + addedInY
-
 firstSubsetTrainX = np.array(firstSubsetTrainX)
 firstSubsetTrainY = np.array(firstSubsetTrainY)
 
@@ -246,10 +238,6 @@ secondSubsetTrainY = []
 for index in secondTrainIndexes:
     secondSubsetTrainX.append(trainX[index])
     secondSubsetTrainY.append(trainYMislabeled[index])
-# add in false negative samples to retrain on
-secondSubsetTrainX = secondSubsetTrainX + addedInX
-secondSubsetTrainY = secondSubsetTrainY + addedInY
-
 secondSubsetTrainX = np.array(secondSubsetTrainX)
 secondSubsetTrainY = np.array(secondSubsetTrainY)
 
@@ -257,6 +245,11 @@ secondSubsetTrainY = np.array(secondSubsetTrainY)
 firstConfidenceModel = trainModel(firstSubsetTrainX, firstSubsetTrainY)
 # train a model on second set of data
 secondConfidenceModel = trainModel(firstSubsetTrainX, firstSubsetTrainY)
+
+# collect best indexes over multiple models
+featureVector = []
+addedInX = []
+addedInY = []
 
 for p in range(5):
     # now make predictions on the whole dataset and find the labels
@@ -297,9 +290,9 @@ for p in range(5):
 
     # train models on new training Ys
     firstConfidenceModel = trainModelAlreadyInitialized(
-        trainX, firstModelTrainingY, firstConfidenceModel)
+        firstModelTrainingX, firstModelTrainingY, firstConfidenceModel)
     secondConfidenceModel = trainModelAlreadyInitialized(
-        trainX, secondModelTrainingY, secondConfidenceModel)
+        secondModelTrainingX, secondModelTrainingY, secondConfidenceModel)
 
     # from cross validation
     entropyThreshold = .1
