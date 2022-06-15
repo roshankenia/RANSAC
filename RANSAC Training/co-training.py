@@ -279,6 +279,14 @@ for p in range(5):
         # add to opposite dataset
         firstModelTrainingY.append(secondMax)
         secondModelTrainingY.append(firstMax)
+    # add in false negative samples to retrain on
+    firstModelTrainingX = trainX + addedInX
+    firstModelTrainingY = firstModelTrainingY + addedInY
+    secondModelTrainingX = trainX + addedInX
+    secondModelTrainingY = secondModelTrainingY + addedInY
+
+    firstModelTrainingX = np.array(firstModelTrainingX)
+    secondModelTrainingX = np.array(secondModelTrainingX)
     firstModelTrainingY = np.array(firstModelTrainingY)
     secondModelTrainingY = np.array(secondModelTrainingY)
 
