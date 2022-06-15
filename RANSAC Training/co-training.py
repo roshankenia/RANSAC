@@ -1,22 +1,23 @@
 # -*- coding: utf-8 -*-
 import sys
 sys.path.append('../')
-import itertools
-from tensorflow.keras.callbacks import LearningRateScheduler
-from tensorflow.keras import losses
-from ResNet import ResNet20ForCIFAR10
-import os
-import tensorflow as tf
-import matplotlib.pyplot as plt
-from tensorflow import keras
-import random
-import numpy as np
-from scipy.stats import entropy
-from cifar10_ransac_utils import *
-from sklearn.cluster import KMeans
-from sklearn.manifold import TSNE
-import pandas as pd
 import seaborn as sns
+import pandas as pd
+from sklearn.manifold import TSNE
+from sklearn.cluster import KMeans
+from cifar10_ransac_utils import *
+from scipy.stats import entropy
+import numpy as np
+import random
+from tensorflow import keras
+import matplotlib.pyplot as plt
+import tensorflow as tf
+import os
+from ResNet import ResNet20ForCIFAR10
+from tensorflow.keras import losses
+from tensorflow.keras.callbacks import LearningRateScheduler
+import itertools
+
 
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
 os.environ["CUDA_VISIBLE_DEVICES"] = "6"  # (xxxx is your specific GPU ID)
@@ -269,17 +270,23 @@ for p in range(5):
         firstLabel = np.argmax(firstPredictions[l])
         secondLabel = np.argmax(secondPredictions[l])
 
+        # make new softmax
+        firstMax = np.zeros(10)
+        firstMax[firstLabel] = 1
+        secondMax = np.zeros(10)
+        secondMax[secondLabel] = 1
+
         # add to opposite dataset
-        firstModelTrainingY.append(secondLabel)
-        secondModelTrainingY.append(firstLabel)
+        firstModelTrainingY.append(secondMax)
+        secondModelTrainingY.append(firstMax)
     firstModelTrainingY = np.array(firstModelTrainingY)
     secondModelTrainingY = np.array(secondModelTrainingY)
 
     # train models on new training Ys
-    firstConfidenceModel = trainModel(
-        trainX, firstModelTrainingY)
-    secondConfidenceModel = trainModel(
-        trainX, secondModelTrainingY)
+    firstConfidenceModel = trainModelAlreadyInitialized(
+        trainX, firstModelTrainingY, firstConfidenceModel)
+    secondConfidenceModel = trainModelAlreadyInitialized(
+        trainX, secondModelTrainingY, secondConfidenceModel)
 
     # from cross validation
     entropyThreshold = .1
