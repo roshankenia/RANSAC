@@ -197,7 +197,7 @@ print("Num GPUs Available: ", len(
 featureVector = []
 addedInX = []
 addedInY = []
-for p in range(1):
+for p in range(5):
     # select subset of data to train on
     # calculate number of samples to be added to subset
     numberTrain = int(0.5 * len(trainX))
