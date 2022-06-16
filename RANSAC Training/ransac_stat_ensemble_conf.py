@@ -185,7 +185,7 @@ cifar10_data = CIFAR10Data()
 trainX, trainY, testX, testY = cifar10_data.get_data(subtract_mean=True)
 
 # corrupt data
-noisePercentage = 0.5
+noisePercentage = 0.1
 trainYMislabeled = corruptData(trainY, noisePercentage)
 
 # print(upperBoundAccuracy)
@@ -271,6 +271,7 @@ useConfOnlyY = []
 confidences = []
 nonConfidences = []
 confIndexes = []
+confRes = []
 for i in range(len(trainX)):
     # get iteration data
     iterData = []
@@ -318,6 +319,9 @@ for i in range(len(trainX)):
         useConfOnlyX.append(trainX[i])
         useConfOnlyY.append(trainYMislabeled[i])
         confIndexes.append(i)
+        confRes.append(1)
+    else:
+        confRes.append(0)
 
     # add data to stat vector
     data = [avgEnt, avgPeak, stdEnt, stdPeak, confident]  # , consistent]
@@ -330,10 +334,10 @@ for i in range(len(trainX)):
     # decide whether this was noisy data or not
     if np.argmax(trainY[i]) == np.argmax(trainYMislabeled[i]):
         noiseVector.append(1)
-        confidences.append((confidence+random.uniform(-.5, .5)))
+        confidences.append((confidence+random.uniform(-.25, .25)))
     else:
         noiseVector.append(0)
-        nonConfidences.append((confidence+random.uniform(-.5, .5)))
+        nonConfidences.append((confidence+random.uniform(-.25, .25)))
 useConfOnlyX = np.array(useConfOnlyX)
 useConfOnlyY = np.array(useConfOnlyY)
 # train a model on confident X and Y
@@ -376,6 +380,18 @@ ax.set_ylim(lim)
 ax.set_aspect('equal')
 ax.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.0)
 plt.savefig('tSNE-Results.png')
+plt.close()
+
+fig, ax = plt.subplots(figsize=(10, 10))
+sns.scatterplot(x='tSNE Feature 1', y='tSNE Feature 2',
+                hue=confRes, data=tsne_result_df, ax=ax, s=10)
+lim = (tsne_result.min()-5, tsne_result.max()+5)
+plt.title('Only Confident Sample Selection')
+ax.set_xlim(lim)
+ax.set_ylim(lim)
+ax.set_aspect('equal')
+ax.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.0)
+plt.savefig('tSNE-Conf-Results.png')
 plt.close()
 
 # lets also do a graph of just entropy vs peak value
