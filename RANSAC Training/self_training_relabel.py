@@ -506,8 +506,16 @@ plt.savefig('ent-peak-relabel-results.png')
 plt.close()
 
 # now lets make a new model with the relabeled data
-newTrainingX = np.concatenate(cleanTrainX, noisyTrainX)
-newTrainingY = np.concatenate(cleanTrainY, newLabelY)
+newTrainingX = []
+newTrainingY = []
+for i in range(len(cleanTrainX)):
+    newTrainingX.append(cleanTrainX[i])
+    newTrainingY.append(cleanTrainY[i])
+for i in range(len(noisyTrainX)):
+    newTrainingX.append(noisyTrainX[i])
+    newTrainingY.append(newLabelY[i])
+newTrainingX = np.array(newTrainingX)
+newTrainingY = np.array(newTrainingY)
 
 print(newTrainingX.shape)
 print(newTrainingY.shape)
