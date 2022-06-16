@@ -8,22 +8,22 @@ Original file is located at
 """
 import sys
 sys.path.append('../')
-import itertools
-from tensorflow.keras.callbacks import LearningRateScheduler
-from tensorflow.keras import losses
-from ResNet import ResNet20ForCIFAR10
-import os
-import tensorflow as tf
-import matplotlib.pyplot as plt
-from tensorflow import keras
-import random
-import numpy as np
-from scipy.stats import entropy
-from cifar10_ransac_utils import *
-from sklearn.cluster import KMeans
-from sklearn.manifold import TSNE
-import pandas as pd
 import seaborn as sns
+import pandas as pd
+from sklearn.manifold import TSNE
+from sklearn.cluster import KMeans
+from cifar10_ransac_utils import *
+from scipy.stats import entropy
+import numpy as np
+import random
+from tensorflow import keras
+import matplotlib.pyplot as plt
+import tensorflow as tf
+import os
+from ResNet import ResNet20ForCIFAR10
+from tensorflow.keras import losses
+from tensorflow.keras.callbacks import LearningRateScheduler
+import itertools
 
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
 os.environ["CUDA_VISIBLE_DEVICES"] = "6"  # (xxxx is your specific GPU ID)
@@ -409,6 +409,9 @@ if invAcc > normAcc:
 # create clean data arrays
 cleanTrainX = []
 cleanTrainY = []
+noisyTrainX = []
+noisyTrainY = []
+realLabelY = []
 for i in range(len(kmeans.labels_)):
     confLabel = kmeans.labels_[i]
     # if normal labelling add if confident
@@ -419,6 +422,14 @@ for i in range(len(kmeans.labels_)):
     elif inverse and confLabel == 0:
         cleanTrainX.append(trainX[i])
         cleanTrainY.append(trainYMislabeled[i])
+    elif not inverse and confLabel == 0:
+        noisyTrainX.append(trainX[i])
+        noisyTrainY.append(trainYMislabeled[i])
+        realLabelY.append(trainY[i])
+    elif inverse and confLabel == 1:
+        noisyTrainX.append(trainX[i])
+        noisyTrainY.append(trainYMislabeled[i])
+        realLabelY.append(trainY[i])
 cleanTrainX = np.array(cleanTrainX)
 cleanTrainY = np.array(cleanTrainY)
 
@@ -427,4 +438,80 @@ cleanModel = trainModel(cleanTrainX, cleanTrainY)
 
 # calculate accuracy of this model in using test data
 accuracy = cleanModel.evaluate(testX, testY)[1]
+print('This model had an accuracy of', accuracy, 'on the test data.')
+
+
+print('Now trying to relabel')
+# make prediction on noisy labels
+relabelPredictions = cleanModel.predict(noisyTrainX)
+
+# lets just visualize samples and see how accurate
+rightPredictionCount = 0
+correctRelabel = []
+relabelEntropies = []
+relabelPeaks = []
+newLabelY = []
+for i in range(len(relabelPredictions)):
+    sample = relabelPredictions[i]
+    # get classification
+    predictedClass = np.argmax(sample)
+    # calculate entropy
+    sampleEntropy = entropy(sample)
+
+    # calculate peak value
+    probSorted = sorted(sample)
+    probSorted = probSorted[::-1]
+    # sum all prob except max
+    probSum = 0
+    for j in range(1, len(probSorted)):
+        probSum += probSorted[j]
+    peakValue = probSorted[0]/probSum
+
+    # get actual label
+    realClass = np.argmax(realLabelY[i])
+
+    # check if correct
+    correct = 0
+    if predictedClass == realClass:
+        correct = 1
+    # append data
+    rightPredictionCount += 1
+    correctRelabel.append(correct)
+    relabelEntropies.append(sampleEntropy)
+    relabelPeaks.append(peakValue)
+
+    # add new label
+    newLabel = np.zeros(10)
+    newLabel[predictedClass] = 1
+    newLabelY.append(newLabel)
+
+newLabelY = np.array(newLabelY)
+
+print('The clean model correctly relabeled', rightPredictionCount, 'labels out of',
+      len(relabelPredictions, '=', (rightPredictionCount/len(relabelEntropies))))
+
+
+print('Creating plot')
+result_df = pd.DataFrame(
+    {'Entropy': relabelEntropies, 'Peak Value': relabelPeaks, 'label': correctRelabel})
+fig, ax = plt.subplots(figsize=(10, 10))
+sns.scatterplot(x='Entropy', y='Peak Value',
+                hue='label', data=result_df, ax=ax, s=10)
+plt.title('Entropy vs Peak Value for Relabeled Samples')
+ax.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.0)
+plt.savefig('ent-peak-relabel-results.png')
+plt.close()
+
+# now lets make a new model with the relabeled data
+newTrainingX = cleanTrainX + noisyTrainX
+newTrainingY = cleanTrainY + newLabelY
+
+newTrainingX = np.array(newTrainingX)
+newTrainingY = np.array(newTrainingY)
+
+# create and train a new model
+relabelModel = trainModel(newTrainingX, newTrainingY)
+
+# calculate accuracy of this model in using test data
+accuracy = relabelModel.evaluate(testX, testY)[1]
 print('This model had an accuracy of', accuracy, 'on the test data.')
