@@ -432,6 +432,9 @@ for i in range(len(kmeans.labels_)):
         realLabelY.append(trainY[i])
 cleanTrainX = np.array(cleanTrainX)
 cleanTrainY = np.array(cleanTrainY)
+noisyTrainX = np.array(noisyTrainX)
+noisyTrainY = np.array(noisyTrainY)
+realLabelY = np.array(realLabelY)
 
 # create and train a new model
 cleanModel = trainModel(cleanTrainX, cleanTrainY)
