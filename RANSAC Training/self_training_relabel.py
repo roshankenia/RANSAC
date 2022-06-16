@@ -478,7 +478,7 @@ for i in range(len(relabelPredictions)):
     if predictedClass == realClass:
         correct = 1
     # append data
-    rightPredictionCount += 1
+    rightPredictionCount += correct
     correctRelabel.append(correct)
     relabelEntropies.append(sampleEntropy)
     relabelPeaks.append(peakValue)
@@ -506,11 +506,11 @@ plt.savefig('ent-peak-relabel-results.png')
 plt.close()
 
 # now lets make a new model with the relabeled data
-newTrainingX = cleanTrainX + noisyTrainX
-newTrainingY = cleanTrainY + newLabelY
+newTrainingX = np.concatenate(cleanTrainX, noisyTrainX)
+newTrainingY = np.concatenate(cleanTrainY, newLabelY)
 
-newTrainingX = np.array(newTrainingX)
-newTrainingY = np.array(newTrainingY)
+print(newTrainingX.shape)
+print(newTrainingY.shape)
 
 # create and train a new model
 relabelModel = trainModel(newTrainingX, newTrainingY)
