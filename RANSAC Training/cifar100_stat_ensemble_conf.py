@@ -8,22 +8,22 @@ Original file is located at
 """
 import sys
 sys.path.append('../')
-import seaborn as sns
-import pandas as pd
-from sklearn.manifold import TSNE
-from sklearn.cluster import KMeans
-from cifar100_ransac_utils import *
-from scipy.stats import entropy
-import numpy as np
-import random
-from tensorflow import keras
-import matplotlib.pyplot as plt
-import tensorflow as tf
-import os
-from ResNet import ResNet20ForCIFAR10
-from tensorflow.keras import losses
-from tensorflow.keras.callbacks import LearningRateScheduler
 import itertools
+from tensorflow.keras.callbacks import LearningRateScheduler
+from tensorflow.keras import losses
+from ResNet import ResNet20ForCIFAR10
+import os
+import tensorflow as tf
+import matplotlib.pyplot as plt
+from tensorflow import keras
+import random
+import numpy as np
+from scipy.stats import entropy
+from cifar100_ransac_utils import *
+from sklearn.cluster import KMeans
+from sklearn.manifold import TSNE
+import pandas as pd
+import seaborn as sns
 
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
 os.environ["CUDA_VISIBLE_DEVICES"] = "6"  # (xxxx is your specific GPU ID)
@@ -284,7 +284,8 @@ for i in range(len(trainX)):
     confidence = 0
     curLabel = iterData[0][0]
     consistent = 1
-    predLabels = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    predLabels = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
     for it in iterData:
         entVals.append(it[1])
         peakVals.append(it[2])
