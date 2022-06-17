@@ -24,10 +24,10 @@ os.environ["CUDA_VISIBLE_DEVICES"] = "6"  # (xxxx is your specific GPU ID)
 
 # get data
 cifar100_data = CIFAR100Data()
-trainX, trainY, testX, testY = cifar100_data.get_data(subtract_mean=True)
+trainX, trainY, testX, testY = cifar100_data.get_data(subtract_mean=False)
 
 weight_decay = 1e-4
-lr = 1e-2
+lr = 1e-1
 num_classes = 100
 cleanModel = ResNet20ForCIFAR10(input_shape=(
     32, 32, 3), classes=num_classes, weight_decay=weight_decay)
