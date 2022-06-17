@@ -185,7 +185,7 @@ cifar10_data = CIFAR10Data()
 trainX, trainY, testX, testY = cifar10_data.get_data(subtract_mean=True)
 
 # corrupt data
-noisePercentage = 0.50
+noisePercentage = 0.70
 trainYMislabeled = corruptData(trainY, noisePercentage)
 
 # print(upperBoundAccuracy)
