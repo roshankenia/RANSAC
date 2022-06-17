@@ -16,7 +16,7 @@ import matplotlib.pyplot as plt
 from tensorflow import keras
 from cifar100_clean_utils import *
 from tensorflow.keras import losses
-from ResNet import ResNet20ForCIFAR10
+from ResNet import ResNet56ForCIFAR10
 from tensorflow.keras.callbacks import LearningRateScheduler
 
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
@@ -29,7 +29,7 @@ trainX, trainY, testX, testY = cifar100_data.get_data(subtract_mean=True)
 weight_decay = 1e-4
 lr = 1e-1
 num_classes = 100
-cleanModel = ResNet20ForCIFAR10(input_shape=(
+cleanModel = ResNet56ForCIFAR10(input_shape=(
     32, 32, 3), classes=num_classes, weight_decay=weight_decay)
 opt = tf.keras.optimizers.SGD(lr=lr, momentum=0.9, nesterov=False)
 cleanModel.compile(optimizer=opt,
@@ -40,9 +40,9 @@ cleanModel.compile(optimizer=opt,
 
 def lr_scheduler(epoch):
     new_lr = lr
-    if epoch <= 11:
+    if epoch <= 21:
         pass
-    elif epoch > 11 and epoch <= 27:
+    elif epoch > 21 and epoch <= 37:
         new_lr = lr * 0.1
     else:
         new_lr = lr * 0.01
