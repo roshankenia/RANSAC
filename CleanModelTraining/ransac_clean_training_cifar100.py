@@ -28,7 +28,7 @@ trainX, trainY, testX, testY = cifar100_data.get_data(subtract_mean=True)
 
 weight_decay = 1e-4
 lr = 1e-1
-num_classes = 10
+num_classes = 100
 cleanModel = ResNet20ForCIFAR10(input_shape=(
     32, 32, 3), classes=num_classes, weight_decay=weight_decay)
 opt = tf.keras.optimizers.SGD(lr=lr, momentum=0.9, nesterov=False)
