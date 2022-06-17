@@ -185,7 +185,7 @@ cifar10_data = CIFAR10Data()
 trainX, trainY, testX, testY = cifar10_data.get_data(subtract_mean=True)
 
 # corrupt data
-noisePercentage = 0.1
+noisePercentage = 0.20
 trainYMislabeled = corruptData(trainY, noisePercentage)
 
 # print(upperBoundAccuracy)
@@ -350,8 +350,8 @@ print('This confident model had an accuracy of', accuracy, 'on the test data.')
 
 # create 1-d plot of confidence
 plt.figure()
-plt.eventplot(confidences, orientation='horizontal', colors='b')
 plt.eventplot(nonConfidences, orientation='horizontal', colors='r')
+plt.eventplot(confidences, orientation='horizontal', colors='b')
 plt.savefig('confVsNonConf.png')
 plt.close()
 
