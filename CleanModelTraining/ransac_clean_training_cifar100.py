@@ -40,9 +40,9 @@ cleanModel.compile(optimizer=opt,
 
 def lr_scheduler(epoch):
     new_lr = lr
-    if epoch <= 21:
+    if epoch <= 41:
         pass
-    elif epoch > 21 and epoch <= 37:
+    elif epoch > 41 and epoch <= 77:
         new_lr = lr * 0.1
     else:
         new_lr = lr * 0.01
@@ -67,7 +67,7 @@ reduce_lr = LearningRateScheduler(lr_scheduler)
 #     optimizer=opt, loss=losses.categorical_crossentropy, metrics=['accuracy'])
 
 # Fit
-r = cleanModel.fit(trainX, trainY, epochs=50,
+r = cleanModel.fit(trainX, trainY, epochs=100,
                    batch_size=128, callbacks=[reduce_lr])
 
 # obtain results
