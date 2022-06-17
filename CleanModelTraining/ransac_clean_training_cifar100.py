@@ -16,7 +16,7 @@ import matplotlib.pyplot as plt
 from tensorflow import keras
 from cifar100_clean_utils import *
 from tensorflow.keras import losses
-from ResNet import ResNet20ForCIFAR10
+from ResNet import ResNet32ForCIFAR10
 from tensorflow.keras.callbacks import LearningRateScheduler
 
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
@@ -26,10 +26,10 @@ os.environ["CUDA_VISIBLE_DEVICES"] = "6"  # (xxxx is your specific GPU ID)
 cifar100_data = CIFAR100Data()
 trainX, trainY, testX, testY = cifar100_data.get_data(subtract_mean=True)
 
-weight_decay = 1e-2
+weight_decay = 1e-4
 lr = 1e-1
 num_classes = 100
-cleanModel = ResNet20ForCIFAR10(input_shape=(
+cleanModel = ResNet32ForCIFAR10(input_shape=(
     32, 32, 3), classes=num_classes, weight_decay=weight_decay)
 opt = tf.keras.optimizers.SGD(lr=lr, momentum=0.9, nesterov=False)
 cleanModel.compile(optimizer=opt,
