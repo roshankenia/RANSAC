@@ -185,7 +185,7 @@ cifar100_data = CIFAR100Data()
 trainX, trainY, testX, testY = cifar100_data.get_data(subtract_mean=True)
 
 # corrupt data
-noisePercentage = 0.2
+noisePercentage = 0.1
 trainYMislabeled = corruptData(trainY, noisePercentage)
 
 # print(upperBoundAccuracy)
@@ -242,8 +242,8 @@ for p in range(5):
     # train a model on second set of data
     secondConfidenceModel = trainModel(firstSubsetTrainX, firstSubsetTrainY)
     # from cross validation
-    entropyThreshold = .1
-    peakThreshold = 400
+    entropyThreshold = .25
+    peakThreshold = 200
 
     # find samples that this model is confident on
     sampleArray, falseNegativeX, falseNegativeY = makeConfidentTrainingSets(
