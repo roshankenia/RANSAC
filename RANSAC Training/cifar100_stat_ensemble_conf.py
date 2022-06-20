@@ -178,8 +178,8 @@ def makeConfidentTrainingSets(firstConfidenceModel, secondConfidenceModel, corTr
             falseNegativeY.append(corTrainY[i])
             falseNegativeCount += 1
 
-    resultFile.write('False negatives: ' + str(falseNegativeCount))
-    resultFile.write('Class Scores: ' + str(classScores))
+    resultFile.write('False negatives: ' + str(falseNegativeCount) + '\n')
+    resultFile.write('Class Scores: ' + str(classScores) + '\n')
     return sampleArray, falseNegativeX, falseNegativeY
 
 
@@ -188,7 +188,7 @@ cifar100_data = CIFAR100Data()
 trainX, trainY, testX, testY = cifar100_data.get_data(subtract_mean=True)
 
 # corrupt data
-noisePercentage = 0.1
+noisePercentage = 0.2
 trainYMislabeled = corruptData(trainY, noisePercentage)
 
 # print(upperBoundAccuracy)
@@ -351,7 +351,7 @@ confModel = trainModel(useConfOnlyX, useConfOnlyY)
 # calculate accuracy of this model in using test data
 accuracy = confModel.evaluate(testX, testY)[1]
 resultFile.write('This confident model had an accuracy of ' +
-                 str(accuracy) + ' on the test data.')
+                 str(accuracy) + ' on the test data.' + '\n')
 
 # create 1-d plot of confidence
 plt.figure()
@@ -362,8 +362,8 @@ plt.close()
 
 statVector = np.array(statVector)
 noiseVector = np.array(noiseVector)
-resultFile.write('Number of samples that were inconsistent: ' + str(consistentCount))
-resultFile.write('Number of samples that were confident: ' + str(confidentCount))
+resultFile.write('Number of samples that were inconsistent: ' + str(consistentCount) + '\n')
+resultFile.write('Number of samples that were confident: ' + str(confidentCount) + '\n')
 
 # We want to get TSNE embedding with 2 dimensions
 n_components = 2
@@ -425,7 +425,7 @@ ax.set_aspect('equal')
 ax.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.0)
 plt.savefig('kmeans-2-Results.png')
 plt.close()
-resultFile.write('cluster center: ' + str(kmeans.cluster_centers_))
+resultFile.write('cluster center: ' + str(kmeans.cluster_centers_) + '\n')
 # calculate accuracy
 normalCount = 0
 inverseCount = 0
@@ -441,9 +441,9 @@ for l in range(len(kmeans.labels_)):
             if noiseVector[l] == 0:
                 inverseCount += 1
 resultFile.write('KMeans had a normal accuracy of: ' + str(normalCount) + ' out of ' + str(len(
-    noiseVector)) + ' which equals ' + str((normalCount/len(noiseVector))))
+    noiseVector)) + ' which equals ' + str((normalCount/len(noiseVector))) + '\n')
 resultFile.write('KMeans had an inverse accuracy of: ' + str(inverseCount) + ' out of ' + str(len(
-    noiseVector)) + ' which equals ' + str((inverseCount/len(noiseVector))))
+    noiseVector)) + ' which equals ' + str((inverseCount/len(noiseVector))) + '\n')
 
 
 # now we want to train on the clean data
@@ -477,7 +477,7 @@ cleanTrainY = np.array(cleanTrainY)
 
 # print how many same samples
 resultFile.write('There were ' + str(sameSampCount) + ' samples both in confident only: ' +
-                 str(len(useConfOnlyY)) + ' and in clean: ' + str(len(cleanTrainY)))
+                 str(len(useConfOnlyY)) + ' and in clean: ' + str(len(cleanTrainY)) + '\n')
 
 # create and train a new model
 cleanModel = trainModel(cleanTrainX, cleanTrainY)
@@ -485,5 +485,5 @@ cleanModel = trainModel(cleanTrainX, cleanTrainY)
 # calculate accuracy of this model in using test data
 accuracy = cleanModel.evaluate(testX, testY)[1]
 resultFile.write('This KMeans model had an accuracy of ' +
-                 str(accuracy) + ' on the test data.')
+                 str(accuracy) + ' on the test data.' + '\n')
 resultFile.close()
