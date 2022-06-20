@@ -266,6 +266,11 @@ noiseVector = []
 confidentCount = 0
 consistentCount = 0
 
+cleanTrainX = []
+cleanTrainY = []
+noisyTrainX = []
+noisyTrainY = []
+realLabelY = []
 for i in range(len(trainX)):
     # get iteration data
     iterData = []
@@ -310,6 +315,13 @@ for i in range(len(trainX)):
         stdEnt = 0
         stdPeak = 0
 
+        cleanTrainX.append(trainX[i])
+        cleanTrainY.append(trainYMislabeled[i])
+    else:
+        noisyTrainX.append(trainX[i])
+        noisyTrainY.append(trainYMislabeled[i])
+        realLabelY.append(trainY[i])
+
     # add data to stat vector
     data = [avgEnt, avgPeak, stdEnt, stdPeak, confident]  # , consistent]
     statVector.append(data)
@@ -323,33 +335,16 @@ for i in range(len(trainX)):
         noiseVector.append(1)
     else:
         noiseVector.append(0)
+cleanTrainX = np.array(cleanTrainX)
+cleanTrainY = np.array(cleanTrainY)
+noisyTrainX = np.array(noisyTrainX)
+noisyTrainY = np.array(noisyTrainY)
+realLabelY = np.array(realLabelY)
 
 statVector = np.array(statVector)
 noiseVector = np.array(noiseVector)
 print('Number of samples that were inconsistent:', consistentCount)
 print('Number of samples that were confident:', confidentCount)
-
-# We want to get TSNE embedding with 2 dimensions
-n_components = 2
-tsne = TSNE(n_components)
-tsne_result = tsne.fit_transform(statVector)
-tsne_result.shape
-# Two dimensions for each of our images
-# Plot the result of our TSNE with the label color coded
-# A lot of the stuff here is about making the plot look pretty and not TSNE
-tsne_result_df = pd.DataFrame(
-    {'tSNE Feature 1': tsne_result[:, 0], 'tSNE Feature 2': tsne_result[:, 1], 'label': noiseVector})
-fig, ax = plt.subplots(figsize=(10, 10))
-sns.scatterplot(x='tSNE Feature 1', y='tSNE Feature 2',
-                hue='label', data=tsne_result_df, ax=ax, s=10)
-lim = (tsne_result.min()-5, tsne_result.max()+5)
-plt.title('Average and Variance of Entropy and Peak Value Reduced')
-ax.set_xlim(lim)
-ax.set_ylim(lim)
-ax.set_aspect('equal')
-ax.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.0)
-plt.savefig('tSNE-Results.png')
-plt.close()
 
 # lets also do a graph of just entropy vs peak value
 result_df = pd.DataFrame(
@@ -362,86 +357,15 @@ ax.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.0)
 plt.savefig('ent-peak-results.png')
 plt.close()
 
-# now lets run kmeans to see if we can distinguish the two groups
-tsneData = pd.DataFrame(
-    {'tSNE Feature 1': tsne_result[:, 0], 'tSNE Feature 2': tsne_result[:, 1]})
-kmeans = KMeans(n_clusters=2, init='k-means++', random_state=0).fit(tsneData)
-fig, ax = plt.subplots(figsize=(10, 10))
-sns.scatterplot(x='tSNE Feature 1', y='tSNE Feature 2',
-                hue=kmeans.labels_, data=tsneData, ax=ax, s=10)
-lim = (tsne_result.min()-5, tsne_result.max()+5)
-plt.title('Predicted Label Using KMeans (2 Clusters)')
-ax.set_xlim(lim)
-ax.set_ylim(lim)
-ax.set_aspect('equal')
-ax.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.0)
-plt.savefig('kmeans-2-Results.png')
-plt.close()
-print('cluster center:', kmeans.cluster_centers_)
-# calculate accuracy
-normalCount = 0
-inverseCount = 0
-for l in range(len(kmeans.labels_)):
-    label = kmeans.labels_[l]
-    if label == noiseVector[l]:
-        normalCount += 1
-    else:
-        if label == 0:
-            if noiseVector[l] == 1:
-                inverseCount += 1
-        else:
-            if noiseVector[l] == 0:
-                inverseCount += 1
-print('KMeans had a normal accuracy of:', normalCount, 'out of', len(
-    noiseVector), 'which equals', (normalCount/len(noiseVector)))
-print('KMeans had an inverse accuracy of:', inverseCount, 'out of', len(
-    noiseVector), 'which equals', (inverseCount/len(noiseVector)))
-
-
-# now we want to train on the clean data
-# check which was more accurate
-normAcc = (normalCount/len(noiseVector))
-invAcc = (inverseCount/len(noiseVector))
-inverse = False
-if invAcc > normAcc:
-    inverse = True
-
-# create clean data arrays
-cleanTrainX = []
-cleanTrainY = []
-noisyTrainX = []
-noisyTrainY = []
-realLabelY = []
-for i in range(len(kmeans.labels_)):
-    confLabel = kmeans.labels_[i]
-    # if normal labelling add if confident
-    if not inverse and confLabel == 1:
-        cleanTrainX.append(trainX[i])
-        cleanTrainY.append(trainYMislabeled[i])
-    # if inverse labelling add if not 1
-    elif inverse and confLabel == 0:
-        cleanTrainX.append(trainX[i])
-        cleanTrainY.append(trainYMislabeled[i])
-    elif not inverse and confLabel == 0:
-        noisyTrainX.append(trainX[i])
-        noisyTrainY.append(trainYMislabeled[i])
-        realLabelY.append(trainY[i])
-    elif inverse and confLabel == 1:
-        noisyTrainX.append(trainX[i])
-        noisyTrainY.append(trainYMislabeled[i])
-        realLabelY.append(trainY[i])
-cleanTrainX = np.array(cleanTrainX)
-cleanTrainY = np.array(cleanTrainY)
-noisyTrainX = np.array(noisyTrainX)
-noisyTrainY = np.array(noisyTrainY)
-realLabelY = np.array(realLabelY)
-
 # create and train a new model
+print('Using', len(cleanTrainY), 'samples for clean model training.')
+print('There are', len(noisyTrainY), 'samples that are noisy.')
 cleanModel = trainModel(cleanTrainX, cleanTrainY)
 
 # calculate accuracy of this model in using test data
 accuracy = cleanModel.evaluate(testX, testY)[1]
-print('This model had an accuracy of', accuracy, 'on the test data.')
+print('The model without relabeled samples had an accuracy of',
+      accuracy, 'on the test data.')
 
 
 print('Now trying to relabel')
@@ -469,6 +393,9 @@ for i in range(len(relabelPredictions)):
     for j in range(1, len(probSorted)):
         probSum += probSorted[j]
     peakValue = probSorted[0]/probSum
+
+    if np.isnan(peakValue) or peakValue > 1000:
+        peakValue = 1000
 
     # get actual label
     realClass = np.argmax(realLabelY[i])
@@ -525,4 +452,4 @@ relabelModel = trainModel(newTrainingX, newTrainingY)
 
 # calculate accuracy of this model in using test data
 accuracy = relabelModel.evaluate(testX, testY)[1]
-print('This model had an accuracy of', accuracy, 'on the test data.')
+print('The model with relabeled samples had an accuracy of', accuracy, 'on the test data.')
