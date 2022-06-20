@@ -8,22 +8,22 @@ Original file is located at
 """
 import sys
 sys.path.append('../')
-import seaborn as sns
-import pandas as pd
-from sklearn.manifold import TSNE
-from sklearn.cluster import KMeans
-from cifar100_ransac_utils import *
-from scipy.stats import entropy
-import numpy as np
-import random
-from tensorflow import keras
-import matplotlib.pyplot as plt
-import tensorflow as tf
-import os
-from ResNet import ResNet20ForCIFAR10
-from tensorflow.keras import losses
-from tensorflow.keras.callbacks import LearningRateScheduler
 import itertools
+from tensorflow.keras.callbacks import LearningRateScheduler
+from tensorflow.keras import losses
+from ResNet import ResNet20ForCIFAR10
+import os
+import tensorflow as tf
+import matplotlib.pyplot as plt
+from tensorflow import keras
+import random
+import numpy as np
+from scipy.stats import entropy
+from cifar100_ransac_utils import *
+from sklearn.cluster import KMeans
+from sklearn.manifold import TSNE
+import pandas as pd
+import seaborn as sns
 
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
 os.environ["CUDA_VISIBLE_DEVICES"] = "6"  # (xxxx is your specific GPU ID)
@@ -178,8 +178,8 @@ def makeConfidentTrainingSets(firstConfidenceModel, secondConfidenceModel, corTr
             falseNegativeY.append(corTrainY[i])
             falseNegativeCount += 1
 
-    resultFile.write('False negatives:', falseNegativeCount)
-    resultFile.write('Class Scores:', classScores)
+    resultFile.write('False negatives: ' + falseNegativeCount)
+    resultFile.write('Class Scores: ' + classScores)
     return sampleArray, falseNegativeX, falseNegativeY
 
 
@@ -350,8 +350,8 @@ confModel = trainModel(useConfOnlyX, useConfOnlyY)
 
 # calculate accuracy of this model in using test data
 accuracy = confModel.evaluate(testX, testY)[1]
-resultFile.write('This confident model had an accuracy of',
-                 accuracy, 'on the test data.')
+resultFile.write('This confident model had an accuracy of ' +
+                 accuracy + ' on the test data.')
 
 # create 1-d plot of confidence
 plt.figure()
@@ -362,8 +362,8 @@ plt.close()
 
 statVector = np.array(statVector)
 noiseVector = np.array(noiseVector)
-resultFile.write('Number of samples that were inconsistent:', consistentCount)
-resultFile.write('Number of samples that were confident:', confidentCount)
+resultFile.write('Number of samples that were inconsistent: ' + consistentCount)
+resultFile.write('Number of samples that were confident: ' + confidentCount)
 
 # We want to get TSNE embedding with 2 dimensions
 n_components = 2
@@ -425,7 +425,7 @@ ax.set_aspect('equal')
 ax.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.0)
 plt.savefig('kmeans-2-Results.png')
 plt.close()
-resultFile.write('cluster center:', kmeans.cluster_centers_)
+resultFile.write('cluster center: ' + kmeans.cluster_centers_)
 # calculate accuracy
 normalCount = 0
 inverseCount = 0
@@ -440,10 +440,10 @@ for l in range(len(kmeans.labels_)):
         else:
             if noiseVector[l] == 0:
                 inverseCount += 1
-resultFile.write('KMeans had a normal accuracy of:', normalCount, 'out of', len(
-    noiseVector), 'which equals', (normalCount/len(noiseVector)))
-resultFile.write('KMeans had an inverse accuracy of:', inverseCount, 'out of', len(
-    noiseVector), 'which equals', (inverseCount/len(noiseVector)))
+resultFile.write('KMeans had a normal accuracy of: ' + normalCount + ' out of ' + len(
+    noiseVector) + ' which equals ' + (normalCount/len(noiseVector)))
+resultFile.write('KMeans had an inverse accuracy of: ' + inverseCount + ' out of ' + len(
+    noiseVector) + ' which equals ' + (inverseCount/len(noiseVector)))
 
 
 # now we want to train on the clean data
@@ -476,14 +476,14 @@ cleanTrainX = np.array(cleanTrainX)
 cleanTrainY = np.array(cleanTrainY)
 
 # print how many same samples
-resultFile.write('There were', sameSampCount, 'samples both in confident only:',
-                 len(useConfOnlyY), 'and in clean:', len(cleanTrainY))
+resultFile.write('There were ' + sameSampCount + ' samples both in confident only: ' +
+                 len(useConfOnlyY) + ' and in clean: ' + len(cleanTrainY))
 
 # create and train a new model
 cleanModel = trainModel(cleanTrainX, cleanTrainY)
 
 # calculate accuracy of this model in using test data
 accuracy = cleanModel.evaluate(testX, testY)[1]
-resultFile.write('This KMeans model had an accuracy of',
-                 accuracy, 'on the test data.')
+resultFile.write('This KMeans model had an accuracy of ' +
+                 accuracy + ' on the test data.')
 resultFile.close()
