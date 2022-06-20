@@ -242,7 +242,7 @@ for p in range(5):
     # train a model on second set of data
     secondConfidenceModel = trainModel(firstSubsetTrainX, firstSubsetTrainY)
     # from cross validation
-    entropyThreshold = .25
+    entropyThreshold = .4
     peakThreshold = 200
 
     # find samples that this model is confident on
