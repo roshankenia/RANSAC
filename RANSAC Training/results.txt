@@ -1,19 +1,19 @@
-False negatives: 36059
-Class Scores: [0, 4552, 0, 22619, 22829]
-False negatives: 25512
-Class Scores: [0, 4165, 0, 38920, 6915]
-False negatives: 14974
-Class Scores: [0, 4853, 0, 39748, 5399]
-False negatives: 10907
-Class Scores: [0, 4788, 0, 39900, 5312]
-False negatives: 8985
-Class Scores: [0, 4920, 0, 39954, 5126]
-This confident model had an accuracy of 0.7480999827384949 on the test data.
-Number of samples that were inconsistent: 90264
-Number of samples that were confident: 21722
-cluster center: [[-22.538322   9.377415]
- [ 16.818018  -5.047505]]
-KMeans had a normal accuracy of: 34196 out of 50000 which equals 0.68392
-KMeans had an inverse accuracy of: 15804 out of 50000 which equals 0.31608
-There were 15173 samples both in confident only: 21722 and in clean: 28448
-This KMeans model had an accuracy of 0.6517000198364258 on the test data.
+False negatives: 24822
+Class Scores: [0, 8030, 0, 12074, 29896]
+False negatives: 18772
+Class Scores: [0, 10666, 0, 24859, 14475]
+False negatives: 12649
+Class Scores: [0, 11664, 0, 24989, 13347]
+False negatives: 9698
+Class Scores: [0, 11906, 0, 24995, 13099]
+False negatives: 7264
+Class Scores: [0, 12047, 0, 24998, 12955]
+This confident model had an accuracy of 0.5751000046730042 on the test data.
+Number of samples that were inconsistent: 99078
+Number of samples that were confident: 7519
+cluster center: [[ 19.387268  19.228043]
+ [-19.463118 -20.300589]]
+KMeans had a normal accuracy of: 37614 out of 50000 which equals 0.75228
+KMeans had an inverse accuracy of: 12386 out of 50000 which equals 0.24772
+There were 3689 samples both in confident only: 7519 and in clean: 24726
+This KMeans model had an accuracy of 0.5073999762535095 on the test data.
